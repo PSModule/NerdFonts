@@ -1,0 +1,49 @@
+name: Publish [NerdFonts]
+
+on:
+  push:
+    paths:
+    - scripts/**
+    - src/NerdFonts/**
+    - .github/workflows/Publish.NerdFonts.yml
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: pwsh
+
+env:
+  ModuleName: 'NerdFonts'
+  APIKey: ${{ secrets.apikey }}
+
+jobs:
+  test:
+    runs-on: 'ubuntu-latest'
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Install Pester
+        run: |
+          Get-Module -ListAvailable
+
+      - name: Run linting
+        run: |
+          Invoke-ScriptAnalyzer -Path .\src\NerdFonts -Recurse -Verbose
+
+  prepare:
+    runs-on: 'ubuntu-latest'
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+  publish:
+    runs-on: 'ubuntu-latest'
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Publish module
+        if: github.ref == 'refs/heads/main'
+        run: |
+          .\scripts\Publish-Module.ps1 -ModuleName $env:ModuleName -APIKey $env:APIKey -Verbose
