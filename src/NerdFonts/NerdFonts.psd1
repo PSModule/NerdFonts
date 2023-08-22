@@ -9,31 +9,31 @@
 @{
 
     # Script module or binary module file associated with this manifest.
-    # RootModule = ''
+    RootModule           = 'NerdFonts.psm1'
 
     # Version number of this module.
-    ModuleVersion     = '0.0.1'
+    ModuleVersion        = '0.0.1'
 
     # Supported PSEditions
-    # CompatiblePSEditions = @()
+    CompatiblePSEditions = @('Core')
 
     # ID used to uniquely identify this module
-    GUID              = '50a21383-0b6f-42a8-bda9-85f09cbf6edb'
+    GUID                 = '50a21383-0b6f-42a8-bda9-85f09cbf6edb'
 
     # Author of this module
-    Author            = 'Marius Storhaug'
+    Author               = 'Marius Storhaug'
 
     # Company or vendor of this module
-    CompanyName       = 'Marius Storhaug'
+    CompanyName          = 'Marius Storhaug'
 
     # Copyright statement for this module
-    Copyright         = '(c) Marius Storhaug. All rights reserved.'
+    Copyright            = '(c) Marius Storhaug. All rights reserved.'
 
     # Description of the functionality provided by this module
-    Description       = 'A PowerShell module to manage NerdFonts'
+    Description          = 'A PowerShell module to manage NerdFonts'
 
     # Minimum version of the PowerShell engine required by this module
-    # PowerShellVersion = ''
+    PowerShellVersion    = '7.0'
 
     # Name of the PowerShell host required by this module
     # PowerShellHostName = ''
@@ -51,7 +51,16 @@
     # ProcessorArchitecture = ''
 
     # Modules that must be imported into the global environment prior to importing this module
-    # RequiredModules = @()
+    RequiredModules      = @(
+        @{
+            ModuleName    = 'Fonts'
+            ModuleVersion = '0.0'
+        },
+        @{
+            ModuleName    = 'Utilities'
+            ModuleVersion = '0.0'
+        }
+    )
 
     # Assemblies that must be loaded prior to importing this module
     # RequiredAssemblies = @()
@@ -69,16 +78,16 @@
     # NestedModules = @()
 
     # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-    FunctionsToExport = '*'
+    FunctionsToExport    = '*'
 
     # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
-    CmdletsToExport   = '*'
+    CmdletsToExport      = '*'
 
     # Variables to export from this module
-    VariablesToExport = '*'
+    VariablesToExport    = '*'
 
     # Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.
-    AliasesToExport   = '*'
+    AliasesToExport      = '*'
 
     # DSC resources to export from this module
     # DscResourcesToExport = @()
@@ -90,7 +99,7 @@
     # FileList = @()
 
     # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
-    PrivateData       = @{
+    PrivateData          = @{
 
         PSData = @{
 
@@ -123,7 +132,7 @@
     } # End of PrivateData hashtable
 
     # HelpInfo URI of this module
-    HelpInfoURI       = 'https://mariusstorhaug.github.io/NerdFonts'
+    HelpInfoURI          = 'https://mariusstorhaug.github.io/NerdFonts'
 
     # Default prefix for commands exported from this module. Override the default prefix using Import-Module -Prefix.
     # DefaultCommandPrefix = ''

@@ -1,66 +1,79 @@
 ﻿# Download nerd fonts
 # https://www.nerdfonts.com/font-downloads
 
-function Get-NerdFontsReleases {
-    param (
-        [switch] $Latest,
-        [switch] $AllowPrerelease
-    )
-
-    $semverVersionPattern = [regex]'\d+\.\d+\.\d+(-\w+)?'
-
-    $releases = Invoke-RestMethod 'https://api.github.com/repos/ryanoasis/nerd-fonts/releases'
-
-    $releaseTagNames = $releases.tag_name
-    $releaseVersions = $releaseTagNames | ForEach-Object { $semverVersionPattern.Match($_).Value } | Sort-Object
-
-    if (-not $AllowPrerelease) {
-        $releaseVersions = $releaseVersions | Where-Object { $_ -notlike '*-*' }
-    }
-
-    if ($Latest) {
-        return $releaseVersions[-1]
-    }
-
-    return $releaseVersions
-}
-
-function Get-NerdFontsNames {
-    param(
-        [switch] $Latest,
-        [switch] $AllowPrerelease
-    )
-    if ($Latest) {
-        $latest = Get-NerdFontsReleases -Latest -AllowPrerelease:$AllowPrerelease
-    } else {
-        $latest = Get-NerdFontsReleases -AllowPrerelease:$AllowPrerelease
-    }
-    $latest = Invoke-RestMethod 'https://api.github.com/repos/ryanoasis/nerd-fonts/releases/latest'
-    $packages = $latest.assets.browser_download_url | Where-Object { $_ -like '*.zip' }
-    $fontNames = $packages | ForEach-Object { $_.Split('/')[-1].Split('.')[0] }
-    $fontNames
-}
-
 function Get-NerdFonts {
-    param(
-        [string[]] $Name,
-        [string[]] $Version,
-        [switch] $Latest,
-        [switch] $AllowPrerelease
-    )
+    param ()
 
-    begin {
-        $versionPattern = [regex]'\d+\.\d+\.\d+(-\w+)?'
-    }
+    $release = Invoke-RestMethod 'https://api.github.com/repos/ryanoasis/nerd-fonts/releases/latest'
+    $version = $release.tag_name
+    $assets = $release.assets.browser_download_url | Where-Object { $_ -like '*.zip' }
 
-    process {
-        foreach ($NerdFontsPath in $Path) {
-            $NerdFontsVersionOutput = & $NerdFontsPath --version
-            $version = $versionPattern.Match($NerdFontsVersionOutput).Value
-            [pscustomobject]@{
-                Path    = $NerdFontsPath
-                Version = $version
-            }
+    foreach ($asset in $assets) {
+        [pscustomobject]@{
+            Name    = $asset.Split('/')[-1].Split('.')[0]
+            Version = $version
+            URL     = $asset
         }
     }
 }
+
+$script:NerdFonts = Get-NerdFonts
+
+function Install-NerdFont {
+    [CmdletBinding(
+        DefaultParameterSetName = 'Name'
+    )]
+    param(
+        [Parameter(
+            Mandatory,
+            Position = 0,
+            ParameterSetName = 'Name'
+        )]
+        [ValidateNotNullOrEmpty()]
+        [ValidateSet({ $script:NerdFonts.Name })]
+        [string] $Name,
+
+        [Parameter(
+            Mandatory,
+            Position = 0,
+            ParameterSetName = 'All'
+        )]
+        [switch] $All,
+
+        [Parameter(
+            Position = 1,
+            ParameterSetName = '__AllParameterSets'
+        )]
+        [ValidateSet('CurrentUser', 'AllUsers')]
+        [string] $Scope = 'CurrentUser'
+    )
+
+    if ($All) {
+        $NerdFonts = $script:NerdFonts
+    } else {
+        $NerdFonts = $script:NerdFonts | Where-Object Name -EQ $Name
+    }
+
+    foreach ($NerdFont in $NerdFonts) {
+        $URL = $NerdFont.URL
+        $FontName = $NerdFont.Name
+        $downloadPath = "$env:TEMP\$FontName.zip"
+        $extractPath = "$env:TEMP\$FontName"
+
+        Write-Verbose "[$FontName] - Downloading to [$downloadPath]"
+        $storedProgressPreference = $ProgressPreference
+        $ProgressPreference = 'SilentlyContinue' # Suppress progress bar
+        Invoke-WebRequest -Uri $URL -OutFile $downloadPath -Verbose:$false
+        $ProgressPreference = $storedProgressPreference
+
+        Write-Verbose "[$FontName] - Unpack to [$extractPath]"
+        Expand-Archive -Path $downloadPath -DestinationPath $extractPath -Force
+        Remove-Item -Path $downloadPath -Force
+
+        Write-Verbose "[$FontName] - Install to [$Scope]"
+        Install-Font -Path $extractPath -Scope $Scope
+        Remove-Item -Path $extractPath -Force -Recurse
+    }
+}
+
+Export-ModuleMember -Function '*' -Alias '*' -Variable '*' -Cmdlet '*'

@@ -3,9 +3,9 @@ name: Publish [NerdFonts]
 on:
   push:
     paths:
-    - scripts/**
-    - src/NerdFonts/**
-    - .github/workflows/Publish.NerdFonts.yml
+      - scripts/**
+      - src/NerdFonts/**
+      - .github/workflows/Publish.NerdFonts.yml
   workflow_dispatch:
 
 defaults:
