@@ -17,8 +17,6 @@ function Get-NerdFonts {
     }
 }
 
-$script:NerdFonts = Get-NerdFonts
-
 function Install-NerdFont {
     [CmdletBinding(
         DefaultParameterSetName = 'Name'
@@ -30,7 +28,7 @@ function Install-NerdFont {
             ParameterSetName = 'Name'
         )]
         [ValidateNotNullOrEmpty()]
-        [ValidateSet({ $script:NerdFonts.Name })]
+        [ValidateSet({ Get-NerdFonts })]
         [string] $Name,
 
         [Parameter(
