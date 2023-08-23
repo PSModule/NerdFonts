@@ -29,7 +29,7 @@ function Install-NerdFont {
         )]
         [ValidateNotNullOrEmpty()]
         [ValidateSet({ Get-NerdFonts })]
-        [string] $Name,
+        [string[]] $Name,
 
         [Parameter(
             Mandatory,
@@ -46,13 +46,19 @@ function Install-NerdFont {
         [string] $Scope = 'CurrentUser'
     )
 
+    $script:NerdFonts = Get-NerdFonts
+
+    $NerdFontsToInstall = @()
+
     if ($All) {
-        $NerdFonts = $script:NerdFonts
+        $NerdFontsToInstall = $script:NerdFonts
     } else {
-        $NerdFonts = $script:NerdFonts | Where-Object Name -EQ $Name
+        foreach ($FontName in $Name) {
+            $NerdFontsToInstall += $script:NerdFonts | Where-Object Name -EQ $FontName
+        }
     }
 
-    foreach ($NerdFont in $NerdFonts) {
+    foreach ($NerdFont in $NerdFontsToInstall) {
         $URL = $NerdFont.URL
         $FontName = $NerdFont.Name
         $downloadPath = "$env:TEMP\$FontName.zip"
