@@ -25,15 +25,6 @@ function Install-NerdFont {
         [Parameter(
             Mandatory,
             Position = 0,
-            ParameterSetName = 'Name'
-        )]
-        [ValidateNotNullOrEmpty()]
-        [ValidateSet({ Get-NerdFonts })]
-        [string[]] $Name,
-
-        [Parameter(
-            Mandatory,
-            Position = 0,
             ParameterSetName = 'All'
         )]
         [switch] $All,
@@ -46,38 +37,66 @@ function Install-NerdFont {
         [string] $Scope = 'CurrentUser'
     )
 
-    $script:NerdFonts = Get-NerdFonts
+    DynamicParam {
+        $runtimeDefinedParameterDictionary = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
+        $attributeCollection = New-Object System.Collections.ObjectModel.Collection[System.Attribute]
 
-    $NerdFontsToInstall = @()
+        $parameterName = 'Name'
+        $parameterAttribute = New-Object System.Management.Automation.ParameterAttribute
+        $parameterAttribute.Mandatory = $true
+        $parameterAttribute.ParameterSetName = 'Name'
+        $parameterAttribute.Position = 0
+        $parameterAttribute.HelpMessage = 'Name of the font to uninstall.'
+        $parameterAttribute.ValueFromPipeline = $true
+        $parameterAttribute.ValueFromPipelineByPropertyName = $true
+        $attributeCollection.Add($parameterAttribute)
 
-    if ($All) {
-        $NerdFontsToInstall = $script:NerdFonts
-    } else {
-        foreach ($FontName in $Name) {
-            $NerdFontsToInstall += $script:NerdFonts | Where-Object Name -EQ $FontName
+        $parameterValidateSet = (Get-NerdFonts).Name
+        $validateSetAttribute = New-Object System.Management.Automation.ValidateSetAttribute($parameterValidateSet)
+        $attributeCollection.Add($validateSetAttribute)
+
+        $runtimeDefinedParameter = New-Object System.Management.Automation.RuntimeDefinedParameter($parameterName, [string[]], $attributeCollection)
+        $runtimeDefinedParameterDictionary.Add($parameterName, $runtimeDefinedParameter)
+        return $runtimeDefinedParameterDictionary
+    }
+
+    begin {
+        $NerdFonts = Get-NerdFonts
+        $NerdFontsToInstall = @()
+    }
+
+    process {
+        if ($All) {
+            $NerdFontsToInstall = $NerdFonts
+        } else {
+            foreach ($FontName in $Name) {
+                $NerdFontsToInstall += $NerdFonts | Where-Object Name -EQ $FontName
+            }
+        }
+
+        foreach ($NerdFont in $NerdFontsToInstall) {
+            $URL = $NerdFont.URL
+            $FontName = $NerdFont.Name
+            $downloadPath = "$env:TEMP\$FontName.zip"
+            $extractPath = "$env:TEMP\$FontName"
+
+            Write-Verbose "[$FontName] - Downloading to [$downloadPath]"
+            $storedProgressPreference = $ProgressPreference
+            $ProgressPreference = 'SilentlyContinue' # Suppress progress bar
+            Invoke-WebRequest -Uri $URL -OutFile $downloadPath -Verbose:$false
+            $ProgressPreference = $storedProgressPreference
+
+            Write-Verbose "[$FontName] - Unpack to [$extractPath]"
+            Expand-Archive -Path $downloadPath -DestinationPath $extractPath -Force
+            Remove-Item -Path $downloadPath -Force
+
+            Write-Verbose "[$FontName] - Install to [$Scope]"
+            Install-Font -Path $extractPath -Scope $Scope
+            Remove-Item -Path $extractPath -Force -Recurse
         }
     }
 
-    foreach ($NerdFont in $NerdFontsToInstall) {
-        $URL = $NerdFont.URL
-        $FontName = $NerdFont.Name
-        $downloadPath = "$env:TEMP\$FontName.zip"
-        $extractPath = "$env:TEMP\$FontName"
-
-        Write-Verbose "[$FontName] - Downloading to [$downloadPath]"
-        $storedProgressPreference = $ProgressPreference
-        $ProgressPreference = 'SilentlyContinue' # Suppress progress bar
-        Invoke-WebRequest -Uri $URL -OutFile $downloadPath -Verbose:$false
-        $ProgressPreference = $storedProgressPreference
-
-        Write-Verbose "[$FontName] - Unpack to [$extractPath]"
-        Expand-Archive -Path $downloadPath -DestinationPath $extractPath -Force
-        Remove-Item -Path $downloadPath -Force
-
-        Write-Verbose "[$FontName] - Install to [$Scope]"
-        Install-Font -Path $extractPath -Scope $Scope
-        Remove-Item -Path $extractPath -Force -Recurse
-    }
+    end{}
 }
 
 Export-ModuleMember -Function '*' -Alias '*' -Variable '*' -Cmdlet '*'
