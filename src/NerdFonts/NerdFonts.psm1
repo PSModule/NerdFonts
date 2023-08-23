@@ -4,7 +4,7 @@
 function Get-NerdFonts {
     param ()
 
-    $release = Invoke-RestMethod 'https://api.github.com/repos/ryanoasis/nerd-fonts/releases/latest'
+    $release = Invoke-RestMethod 'https://api.github.com/repos/ryanoasis/nerd-fonts/releases/latest' -Verbose:$false
     $version = $release.tag_name
     $assets = $release.assets.browser_download_url | Where-Object { $_ -like '*.zip' }
 
