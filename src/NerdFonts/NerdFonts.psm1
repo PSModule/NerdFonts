@@ -1,7 +1,4 @@
-﻿# Download nerd fonts
-# https://www.nerdfonts.com/font-downloads
-
-function Get-NerdFonts {
+﻿function Get-NerdFonts {
     param (
         [Parameter()]
         [SupportsWildcards()]
@@ -10,7 +7,7 @@ function Get-NerdFonts {
 
     $release = Invoke-RestMethod 'https://api.github.com/repos/ryanoasis/nerd-fonts/releases/latest' -Verbose:$false
     $version = $release.tag_name
-    $assets = $release.assets.browser_download_url | Where-Object { $_ -like '*.zip' -and $_ -like "*$Name*"} | Sort-Object
+    $assets = $release.assets.browser_download_url | Where-Object { $_ -like '*.zip' -and $_ -like "*$Name*" } | Sort-Object
     $nerdFonts = @()
     foreach ($asset in $assets) {
         $nerdFonts += [pscustomobject]@{
@@ -66,6 +63,9 @@ function Install-NerdFont {
     }
 
     begin {
+        if ($Scope -eq 'AllUsers' -and -not (IsAdmin)) {
+            throw "Administrator rights are required to uninstall fonts. Please run the command again with elevated rights (Run as Administrator) or provide '-Scope CurrentUser' to your command."
+        }
         $NerdFonts = Get-NerdFonts
         $NerdFontsToInstall = @()
         $Name = $PSBoundParameters.Name
@@ -104,7 +104,7 @@ function Install-NerdFont {
         }
     }
 
-    end{}
+    end {}
 }
 
 Export-ModuleMember -Function '*' -Alias '*' -Variable '*' -Cmdlet '*'
