@@ -2,19 +2,24 @@
 # https://www.nerdfonts.com/font-downloads
 
 function Get-NerdFonts {
-    param ()
+    param (
+        [Parameter()]
+        [SupportsWildcards()]
+        [string] $Name
+    )
 
     $release = Invoke-RestMethod 'https://api.github.com/repos/ryanoasis/nerd-fonts/releases/latest' -Verbose:$false
     $version = $release.tag_name
-    $assets = $release.assets.browser_download_url | Where-Object { $_ -like '*.zip' }
-
+    $assets = $release.assets.browser_download_url | Where-Object { $_ -like '*.zip' -and $_ -like "*$Name*"} | Sort-Object
+    $nerdFonts = @()
     foreach ($asset in $assets) {
-        [pscustomobject]@{
+        $nerdFonts += [pscustomobject]@{
             Name    = $asset.Split('/')[-1].Split('.')[0]
             Version = $version
             URL     = $asset
         }
     }
+    return $nerdFonts
 }
 
 function Install-NerdFont {
@@ -63,6 +68,7 @@ function Install-NerdFont {
     begin {
         $NerdFonts = Get-NerdFonts
         $NerdFontsToInstall = @()
+        $Name = $PSBoundParameters.Name
     }
 
     process {
@@ -73,6 +79,8 @@ function Install-NerdFont {
                 $NerdFontsToInstall += $NerdFonts | Where-Object Name -EQ $FontName
             }
         }
+
+        Write-Verbose "[$Scope] - Installing [$($NerdFontsToInstall.count)] fonts"
 
         foreach ($NerdFont in $NerdFontsToInstall) {
             $URL = $NerdFont.URL
