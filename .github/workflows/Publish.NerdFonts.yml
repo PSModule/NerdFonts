@@ -10,6 +10,8 @@ jobs:
   BuildModule:
     name: Build Module
     runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }} # Used for GitHub CLI authentication
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
