@@ -1,15 +1,13 @@
 @{
-    # Author of this module
-    Author      = 'Marius Storhaug'
-
-    # Company or vendor of this module
-    CompanyName = 'Marius Storhaug'
+    # Version number of this module
+    ModuleVersion = '0.3.0'
 
     # Description of the functionality provided by this module
-    Description = 'A PowerShell module to manage NerdFonts'
+    Description   = 'A PowerShell module to manage NerdFonts'
 
-    # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
-    PrivateData = @{
+    # Private data to pass to the module specified in RootModule/ModuleToProcess.
+    # This may also contain a PSData hashtable with additional module metadata used by PowerShell.
+    PrivateData   = @{
 
         PSData = @{
 
@@ -30,7 +28,7 @@
     } # End of PrivateData hashtable
 
     # HelpInfo URI of this module
-    HelpInfoURI = 'https://mariusstorhaug.github.io/NerdFonts'
+    HelpInfoURI   = 'https://mariusstorhaug.github.io/NerdFonts'
 
 }
 
