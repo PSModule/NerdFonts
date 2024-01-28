@@ -2,6 +2,28 @@
 #Requires -Modules Utilities
 
 function Install-NerdFont {
+    <#
+        .SYNOPSIS
+        Installs Nerd Fonts to the system.
+
+        .DESCRIPTION
+        Installs Nerd Fonts to the system.
+
+        .EXAMPLE
+        Install-NerdFont -Name 'Fira Code'
+
+        Installs the font 'Fira Code' to the current user.
+
+        .EXAMPLE
+        Install-NerdFont -Name 'Fira Code' -Scope AllUsers
+
+        Installs the font 'Fira Code' to all users. This requires to be run as administrator.
+
+        .EXAMPLE
+        Install-NerdFont -All
+
+        Installs all Nerd Fonts to the current user.
+    #>
     [CmdletBinding(
         DefaultParameterSetName = 'Name'
     )]
@@ -46,7 +68,11 @@ function Install-NerdFont {
 
     begin {
         if ($Scope -eq 'AllUsers' -and -not (IsAdmin)) {
-            throw "Administrator rights are required to uninstall fonts. Please run the command again with elevated rights (Run as Administrator) or provide '-Scope CurrentUser' to your command."
+            $errorMessage = @'
+Administrator rights are required to uninstall fonts.
+Please run the command again with elevated rights (Run as Administrator) or provide '-Scope CurrentUser' to your command."
+'@
+            throw $errorMessage
         }
         $NerdFonts = Get-NerdFonts
         $NerdFontsToInstall = @()
