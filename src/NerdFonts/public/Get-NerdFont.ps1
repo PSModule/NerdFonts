@@ -19,7 +19,7 @@
         # Name of the NerdFont to get
         [Parameter()]
         [SupportsWildcards()]
-        [string] $Name
+        [string] $Name = '*'
     )
 
     $release = Invoke-RestMethod "$script:NerdFontsReleaseURL/latest" -Verbose:$false
