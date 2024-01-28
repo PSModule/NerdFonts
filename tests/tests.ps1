@@ -1,5 +1,11 @@
-﻿Download-NerdFont -Name 'Hack Nerd Font' -Latest -AllowPrerelease -Verbose
-Download-NerdFont -All
-Download-NerdFont -Name 'a', 'b', 'c' -Version v3.0.0 -Verbose
+﻿Describe 'Get-NerdFont' {
+    It 'Function exists' {
+        Get-Command Get-NerdFont | Should -Not -BeNullOrEmpty
+    }
 
-Install-NerdFont -Name 'Hack Nerd Font' -Latest -AllowPrerelease -Verbose
+    It 'Returns all fonts' {
+        $fonts = Get-NerdFont
+        Write-Verbose ($fonts | Out-String) -Verbose
+        $fonts | Should -Not -BeNullOrEmpty
+    }
+}
