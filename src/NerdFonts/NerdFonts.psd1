@@ -1,5 +1,5 @@
 ﻿@{
-    ModuleVersion = '0.3.0'
+    ModuleVersion = '0.0.1'
     Description   = 'A PowerShell module to manage NerdFonts'
     HelpInfoURI   = 'https://PSModule.github.io/NerdFonts'
     PrivateData   = @{
