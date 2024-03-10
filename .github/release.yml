@@ -1,17 +1,18 @@
 # https://docs.github.com/en/repositories/releasing-projects-on-github/automatically-generated-release-notes#configuring-automatically-generated-release-notes
 
 changelog:
+  exclude:
+    labels:
+      - NoRelease
   categories:
-    - title: Breaking Changes
+    - title: 🌟 Breaking Changes
       labels:
         - Major
         - Breaking
-    - title: New Features
+    - title: 🚀 New Features
       labels:
         - Minor
         - Feature
-        - Improvement
-        - Enhancement
     - title: Other Changes
       labels:
         - '*'
