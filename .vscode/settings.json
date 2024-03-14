@@ -1,0 +1,81 @@
+{
+    "[json]": {
+        "editor.defaultFormatter": "vscode.json-language-features"
+    },
+    "[jsonc]": {
+        "editor.defaultFormatter": "vscode.json-language-features"
+    },
+    "[markdown]": {
+        "editor.defaultFormatter": "yzhang.markdown-all-in-one",
+        "editor.quickSuggestions": {
+            "comments": "off",
+            "other": "off",
+            "strings": "off"
+        },
+        "editor.wordWrap": "off"
+    },
+    "[powershell]": {
+        "editor.defaultFormatter": "ms-vscode.powershell",
+        "editor.wordSeparators": "`~!@#%^&*()=+[{]}\\|;:'\",.<>/?",
+        "files.encoding": "utf8bom"
+    },
+    "[yaml]": {
+        "editor.defaultFormatter": "github.vscode-github-actions",
+        "editor.insertSpaces": true,
+        "editor.tabSize": 2,
+    },
+    "[github-actions-workflow]": {
+        "editor.defaultFormatter": "github.vscode-github-actions",
+        "editor.insertSpaces": true,
+        "editor.tabSize": 2
+    },
+    "editor.rulers": [0, 150],
+    "powershell.codeFormatting.autoCorrectAliases": true,
+    "powershell.codeFormatting.newLineAfterCloseBrace": false,
+    "powershell.codeFormatting.pipelineIndentationStyle": "IncreaseIndentationForFirstPipeline",
+    "powershell.codeFormatting.preset": "OTBS",
+    "powershell.codeFormatting.trimWhitespaceAroundPipe": true,
+    "powershell.codeFormatting.useConstantStrings": true,
+    "powershell.codeFormatting.useCorrectCasing": true,
+    "powershell.codeFormatting.whitespaceBetweenParameters": true,
+    "powershell.pester.codeLens": false,
+    "powershell.powerShellDefaultVersion": "PowerShell (x64)",
+    "powershell.scriptAnalysis.enable": true,
+    "todo-tree.general.tags": [
+        "BUG",
+        "HACK",
+        "FIXME",
+        "TODO",
+        "DEBUG"
+    ],
+    "todo-tree.highlights.customHighlight": {
+        "TODO": {
+            "background": "#00ff00",
+            "foreground": "#ffffff",
+            "icon": "alert",
+            "iconColour": "#00ff00",
+            "type": "text-and-comment"
+        },
+        "HACK": {
+            "background": "#ff0000",
+            "foreground": "#ffffff",
+            "icon": "alert",
+            "iconColour": "#ff0000",
+            "type": "text-and-comment"
+        },
+        "FIXME": {
+            "background": "#ff0000",
+            "foreground": "#ffffff",
+            "icon": "alert",
+            "iconColour": "#ff0000",
+            "type": "text-and-comment"
+        },
+        "BUG": {
+            "background": "#ff0000",
+            "foreground": "#ffffff",
+            "icon": "alert",
+            "iconColour": "#ff0000",
+            "type": "text-and-comment"
+        }
+    }
+}
