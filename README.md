@@ -1,12 +1,8 @@
 # NerdFonts
 
-A PowerShell module to manage NerdFonts.
-
-Kudos to owner of NerdFonts, @ryanoasis!
-
-# NerdFonts
-
 This is a PowerShell module for installing NerdFonts on your system.
+
+🎉 Kudos to owner of NerdFonts, @ryanoasis! 🎉
 
 ## Prerequisites
 
@@ -31,13 +27,13 @@ You can use this module to install NerdFonts on your system.
 To install a NerdFont on the system you can use the following command.
 
 ```powershell
-Install-NerdFont -Name 'FiraCode'
+Install-NerdFont -Name 'FiraCode' # Tab completion works on name
 ```
 
 To download the font from the NerdFonts repository and install it on the system, run the following command.
 
 ```powershell
-Install-NerdFont -Name 'FiraCode' -Scope AllUsers
+Install-NerdFont -Name 'FiraCode' -Scope AllUsers #Tab completion works on Scope too
 ```
 
 ### Install all NerdFonts
