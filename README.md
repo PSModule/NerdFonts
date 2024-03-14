@@ -1,12 +1,8 @@
 # NerdFonts
 
-A PowerShell module to manage NerdFonts.
-
-Kudos to owner of NerdFonts, @ryanoasis!
-
-# NerdFonts
-
 This is a PowerShell module for installing NerdFonts on your system.
+
+🎉 Kudos to owner of NerdFonts, @ryanoasis! 🎉
 
 ## Prerequisites
 
