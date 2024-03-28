@@ -1,4 +1,11 @@
-﻿Describe 'Get-NerdFont' {
+﻿[CmdletBinding()]
+Param(
+    # Path to the module to test.
+    [Parameter()]
+    [string] $Path
+)
+
+Describe 'Get-NerdFont' {
     It 'Function exists' {
         Get-Command Get-NerdFont | Should -Not -BeNullOrEmpty
     }

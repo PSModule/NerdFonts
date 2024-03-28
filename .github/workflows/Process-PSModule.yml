@@ -14,11 +14,13 @@ on:
       - labeled
 
 concurrency:
-  group: ${{ github.workflow }}
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: write
   pull-requests: write
+  statuses: write
 
 jobs:
   Process-PSModule:
