@@ -1,5 +1,5 @@
 ﻿#Requires -Modules Fonts
-#Requires -Modules Utilities
+#Requires -Modules Admin
 
 function Install-NerdFont {
     <#
