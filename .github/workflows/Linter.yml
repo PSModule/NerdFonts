@@ -1,0 +1,29 @@
+name: Linter
+
+run-name: "Linter - [${{ github.event.pull_request.title }} #${{ github.event.pull_request.number }}] by @${{ github.actor }}"
+
+on: [pull_request]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  packages: read
+  statuses: write
+
+jobs:
+  Lint:
+    name: Lint code base
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Lint code base
+        uses: super-linter/super-linter@latest
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
