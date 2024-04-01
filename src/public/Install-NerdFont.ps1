@@ -1,5 +1,4 @@
-﻿#Requires -Modules Fonts
-#Requires -Modules Admin
+﻿#Requires -Modules Admin, Fonts, DynamicParams
 
 function Install-NerdFont {
     <#
@@ -30,17 +29,34 @@ function Install-NerdFont {
     )]
     [Alias('Install-NerdFonts')]
     param(
+        # Specify to install all Nerd Font(s).
         [Parameter(ParameterSetName = 'All', Mandatory)]
         [switch] $All,
 
-        [Parameter(ParameterSetName = 'Name', Mandatory)]
-        [ValidateSet({ Get-NerdFonts | Select-Object -ExpandProperty Name })]
-        [string[]] $Name,
-
+        # Specify the scope of where to install the font(s).
         [Parameter()]
         [ValidateSet('CurrentUser', 'AllUsers')]
         [string] $Scope = 'CurrentUser'
     )
+
+    DynamicParam {
+        $DynamicParamDictionary = New-DynamicParamDictionary
+
+        $dynPath = @{
+            Name                            = 'Name'
+            Type                            = [string[]]
+            Mandatory                       = $true
+            ParameterSetName                = 'Name'
+            HelpMessage                     = 'Name of the font to uninstall.'
+            ValueFromPipeline               = $true
+            ValueFromPipelineByPropertyName = $true
+            ValidateSet                     = Get-NerdFonts | Select-Object -ExpandProperty Name
+            DynamicParamDictionary          = $DynamicParamDictionary
+        }
+        New-DynamicParam @dynPath
+
+        return $DynamicParamDictionary
+    }
 
     begin {
         if ($Scope -eq 'AllUsers' -and -not (IsAdmin)) {
