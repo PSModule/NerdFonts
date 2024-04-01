@@ -28,6 +28,11 @@ Describe 'NerdFonts' {
             Write-Verbose ($fonts | Out-String) -Verbose
             $fonts | Should -Not -BeNullOrEmpty
         }
-    }
 
+        It 'Returns a specific font' {
+            $font = Get-NerdFont -Name 'Tinos'
+            Write-Verbose ($font | Out-String) -Verbose
+            $font | Should -Not -BeNullOrEmpty
+        }
+    }
 }
