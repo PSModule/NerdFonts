@@ -7,8 +7,8 @@ Param(
 
 Write-Verbose "Path to the module: [$Path]" -Verbose
 
-Describe 'NerdFonts' {
-    Context 'Module' {
+Describe 'Module' {
+    Context 'NerdFonts' {
         It 'The module should be available' {
             Get-Module -Name 'NerdFonts' -ListAvailable | Should -Not -BeNullOrEmpty
             Write-Verbose (Get-Module -Name 'NerdFonts' -ListAvailable | Out-String) -Verbose
@@ -18,7 +18,7 @@ Describe 'NerdFonts' {
         }
     }
 
-    Context 'Get-NerdFont' {
+    Context 'Function: Get-NerdFont' {
         It 'Function exists' {
             Get-Command Get-NerdFont | Should -Not -BeNullOrEmpty
         }
@@ -33,6 +33,22 @@ Describe 'NerdFonts' {
             $font = Get-NerdFont -Name 'Tinos'
             Write-Verbose ($font | Out-String) -Verbose
             $font | Should -Not -BeNullOrEmpty
+        }
+    }
+
+    Context 'Function: Install-NerdFont' {
+        It '[Install-NerdFont] - Exists' {
+            Get-Command -Name Install-NerdFont | Should -Not -BeNullOrEmpty
+        }
+
+        It '[Install-NerdFont] - Installs a font' {
+            { Install-NerdFont -Font 'Tinos' } | Should -Not -Throw
+            Get-Font -Name 'Tinos' | Should -Not -BeNullOrEmpty
+        }
+
+        It '[Install-NerdFont] - Installs all fonts' {
+            { Install-NerdFont -All -Verbose } | Should -Not -Throw
+            Get-Font -Name 'Terminus' | Should -Not -BeNullOrEmpty
         }
     }
 }
