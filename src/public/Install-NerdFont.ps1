@@ -68,6 +68,14 @@ Please run the command again with elevated rights (Run as Administrator) or prov
         }
         $NerdFonts = Get-NerdFonts
         $NerdFontsToInstall = @()
+
+        $tempPath = Join-Path -Path $HOME -ChildPath '.temp'
+        if (-not (Test-Path -Path $tempPath -PathType Container)) {
+            Write-Verbose "Create folder [$tempPath]"
+            $null = New-Item -Path $tempPath -ItemType Directory
+            $tempFolderCreated = $true
+        }
+
         $Name = $PSBoundParameters.Name
     }
 
@@ -85,8 +93,8 @@ Please run the command again with elevated rights (Run as Administrator) or prov
         foreach ($NerdFont in $NerdFontsToInstall) {
             $URL = $NerdFont.URL
             $FontName = $NerdFont.Name
-            $downloadPath = "$env:TEMP\$FontName.zip"
-            $extractPath = "$env:TEMP\$FontName"
+            $downloadPath = Join-Path -Path $tempPath -ChildPath "$FontName.zip"
+            $extractPath = Join-Path -Path $tempPath -ChildPath "$FontName"
 
             Write-Verbose "[$FontName] - Downloading to [$downloadPath]"
             $storedProgressPreference = $ProgressPreference
@@ -110,5 +118,10 @@ Please run the command again with elevated rights (Run as Administrator) or prov
         }
     }
 
-    end {}
+    end {
+        if ($tempFolderCreated) {
+            Write-Verbose "Remove folder [$tempPath]"
+            Remove-Item -Path $tempPath -Force
+        }
+    }
 }
