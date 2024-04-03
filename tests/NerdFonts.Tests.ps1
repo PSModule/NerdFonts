@@ -42,7 +42,7 @@ Describe 'Module' {
         }
 
         It '[Install-NerdFont] - Installs a font' {
-            { Install-NerdFont -Font 'Tinos' } | Should -Not -Throw
+            { Install-NerdFont -Name 'Tinos' } | Should -Not -Throw
             Get-Font -Name 'Tinos' | Should -Not -BeNullOrEmpty
         }
 
