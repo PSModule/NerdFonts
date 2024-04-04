@@ -12,9 +12,6 @@
         .EXAMPLE
         Get-NerdFonts -Name '*Code'
     #>
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute(
-        'PSReviewUnusedParameter', 'Name', Justification = 'PSScriptAnalyzer false positive'
-    )]
     [Alias('Get-NerdFonts')]
     [CmdletBinding()]
     param (
@@ -26,12 +23,13 @@
 
     $release = Invoke-RestMethod "$script:NerdFontsReleaseURL/latest" -Verbose:$false
     $version = $release.tag_name
-    $assets = $release.assets.browser_download_url | Where-Object { $_ -like '*.zip' -and $_ -like "$Name" } | Sort-Object
-    foreach ($asset in $assets) {
+    Write-Verbose "Latest release: $version"
+    Write-Verbose "Selecting assets by name: '$Name'"
+    $release.assets.browser_download_url | Where-Object { $_ -like '*.zip' } | ForEach-Object {
         [pscustomobject]@{
-            Name    = $asset.Split('/')[-1].Split('.')[0]
+            Name    = $_.Split('/')[-1].Split('.')[0]
             Version = $version
-            URL     = $asset
+            URL     = $_
         }
-    }
+    } | Where-Object { $_.Name -like "$Name" }
 }

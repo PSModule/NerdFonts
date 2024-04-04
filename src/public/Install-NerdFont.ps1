@@ -1,5 +1,4 @@
-﻿#Requires -Modules Fonts
-#Requires -Modules Admin
+﻿#Requires -Modules Admin, Fonts, DynamicParams
 
 function Install-NerdFont {
     <#
@@ -25,46 +24,38 @@ function Install-NerdFont {
         Installs all Nerd Fonts to the current user.
     #>
     [CmdletBinding(
-        DefaultParameterSetName = 'Name'
+        DefaultParameterSetName = 'Name',
+        SupportsShouldProcess
     )]
     [Alias('Install-NerdFonts')]
     param(
-        [Parameter(
-            Mandatory,
-            Position = 0,
-            ParameterSetName = 'All'
-        )]
+        # Specify to install all Nerd Font(s).
+        [Parameter(ParameterSetName = 'All', Mandatory)]
         [switch] $All,
 
-        [Parameter(
-            Position = 1,
-            ParameterSetName = '__AllParameterSets'
-        )]
+        # Specify the scope of where to install the font(s).
+        [Parameter()]
         [ValidateSet('CurrentUser', 'AllUsers')]
         [string] $Scope = 'CurrentUser'
     )
 
     DynamicParam {
-        $runtimeDefinedParameterDictionary = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
-        $attributeCollection = New-Object System.Collections.ObjectModel.Collection[System.Attribute]
+        $DynamicParamDictionary = New-DynamicParamDictionary
 
-        $parameterName = 'Name'
-        $parameterAttribute = New-Object System.Management.Automation.ParameterAttribute
-        $parameterAttribute.Mandatory = $true
-        $parameterAttribute.ParameterSetName = 'Name'
-        $parameterAttribute.Position = 0
-        $parameterAttribute.HelpMessage = 'Name of the font to uninstall.'
-        $parameterAttribute.ValueFromPipeline = $true
-        $parameterAttribute.ValueFromPipelineByPropertyName = $true
-        $attributeCollection.Add($parameterAttribute)
+        $dynPath = @{
+            Name                            = 'Name'
+            Type                            = [string[]]
+            Mandatory                       = $true
+            ParameterSetName                = 'Name'
+            HelpMessage                     = 'Name of the font to uninstall.'
+            ValueFromPipeline               = $true
+            ValueFromPipelineByPropertyName = $true
+            ValidateSet                     = Get-NerdFonts | Select-Object -ExpandProperty Name
+            DynamicParamDictionary          = $DynamicParamDictionary
+        }
+        New-DynamicParam @dynPath
 
-        $parameterValidateSet = (Get-NerdFonts).Name
-        $validateSetAttribute = New-Object System.Management.Automation.ValidateSetAttribute($parameterValidateSet)
-        $attributeCollection.Add($validateSetAttribute)
-
-        $runtimeDefinedParameter = New-Object System.Management.Automation.RuntimeDefinedParameter($parameterName, [string[]], $attributeCollection)
-        $runtimeDefinedParameterDictionary.Add($parameterName, $runtimeDefinedParameter)
-        return $runtimeDefinedParameterDictionary
+        return $DynamicParamDictionary
     }
 
     begin {
@@ -77,6 +68,14 @@ Please run the command again with elevated rights (Run as Administrator) or prov
         }
         $NerdFonts = Get-NerdFonts
         $NerdFontsToInstall = @()
+
+        $tempPath = Join-Path -Path $HOME -ChildPath '.temp'
+        if (-not (Test-Path -Path $tempPath -PathType Container)) {
+            Write-Verbose "Create folder [$tempPath]"
+            $null = New-Item -Path $tempPath -ItemType Directory
+            $tempFolderCreated = $true
+        }
+
         $Name = $PSBoundParameters.Name
     }
 
@@ -94,24 +93,35 @@ Please run the command again with elevated rights (Run as Administrator) or prov
         foreach ($NerdFont in $NerdFontsToInstall) {
             $URL = $NerdFont.URL
             $FontName = $NerdFont.Name
-            $downloadPath = "$env:TEMP\$FontName.zip"
-            $extractPath = "$env:TEMP\$FontName"
+            $downloadPath = Join-Path -Path $tempPath -ChildPath "$FontName.zip"
+            $extractPath = Join-Path -Path $tempPath -ChildPath "$FontName"
 
             Write-Verbose "[$FontName] - Downloading to [$downloadPath]"
             $storedProgressPreference = $ProgressPreference
             $ProgressPreference = 'SilentlyContinue' # Suppress progress bar
-            Invoke-WebRequest -Uri $URL -OutFile $downloadPath -Verbose:$false
+            if ($PSCmdlet.ShouldProcess($FontName, "Download $FontName")) {
+                Invoke-WebRequest -Uri $URL -OutFile $downloadPath -Verbose:$false
+            }
             $ProgressPreference = $storedProgressPreference
 
             Write-Verbose "[$FontName] - Unpack to [$extractPath]"
-            Expand-Archive -Path $downloadPath -DestinationPath $extractPath -Force
-            Remove-Item -Path $downloadPath -Force
+            if ($PSCmdlet.ShouldProcess($FontName, 'Extract archive')) {
+                Expand-Archive -Path $downloadPath -DestinationPath $extractPath -Force
+                Remove-Item -Path $downloadPath -Force
+            }
 
             Write-Verbose "[$FontName] - Install to [$Scope]"
-            Install-Font -Path $extractPath -Scope $Scope
-            Remove-Item -Path $extractPath -Force -Recurse
+            if ($PSCmdlet.ShouldProcess($FontName, 'Install font')) {
+                Install-Font -Path $extractPath -Scope $Scope
+                Remove-Item -Path $extractPath -Force -Recurse
+            }
         }
     }
 
-    end {}
+    end {
+        if ($tempFolderCreated) {
+            Write-Verbose "Remove folder [$tempPath]"
+            Remove-Item -Path $tempPath -Force
+        }
+    }
 }
