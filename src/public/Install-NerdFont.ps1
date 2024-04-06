@@ -93,7 +93,7 @@ Please run the command again with elevated rights (Run as Administrator) or prov
         foreach ($NerdFont in $NerdFontsToInstall) {
             $URL = $NerdFont.URL
             $FontName = $NerdFont.Name
-            $downloadPath = Join-Path -Path $tempPath -ChildPath "$FontName.zip"
+            $downloadPath = Join-Path -Path $tempPath -ChildPath "$FontName$script:ArchiveExtension"
             $extractPath = Join-Path -Path $tempPath -ChildPath "$FontName"
 
             Write-Verbose "[$FontName] - Downloading to [$downloadPath]"
