@@ -47,7 +47,7 @@ function Install-NerdFont {
             Type                            = [string[]]
             Mandatory                       = $true
             ParameterSetName                = 'Name'
-            HelpMessage                     = 'Name of the font to uninstall.'
+            HelpMessage                     = 'Name of the font to install.'
             ValueFromPipeline               = $true
             ValueFromPipelineByPropertyName = $true
             ValidateSet                     = Get-NerdFonts | Select-Object -ExpandProperty Name
@@ -61,7 +61,7 @@ function Install-NerdFont {
     begin {
         if ($Scope -eq 'AllUsers' -and -not (IsAdmin)) {
             $errorMessage = @'
-Administrator rights are required to uninstall fonts.
+Administrator rights are required to install fonts.
 Please run the command again with elevated rights (Run as Administrator) or provide '-Scope CurrentUser' to your command."
 '@
             throw $errorMessage
@@ -93,7 +93,7 @@ Please run the command again with elevated rights (Run as Administrator) or prov
         foreach ($NerdFont in $NerdFontsToInstall) {
             $URL = $NerdFont.URL
             $FontName = $NerdFont.Name
-            $downloadPath = Join-Path -Path $tempPath -ChildPath "$FontName.zip"
+            $downloadPath = Join-Path -Path $tempPath -ChildPath "$FontName$script:ArchiveExtension"
             $extractPath = Join-Path -Path $tempPath -ChildPath "$FontName"
 
             Write-Verbose "[$FontName] - Downloading to [$downloadPath]"
