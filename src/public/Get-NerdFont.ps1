@@ -21,15 +21,6 @@
         [string] $Name = '*'
     )
 
-    $release = Invoke-RestMethod "$script:NerdFontsReleaseURL/latest" -Verbose:$false
-    $version = $release.tag_name
-    Write-Verbose "Latest release: $version"
     Write-Verbose "Selecting assets by name: '$Name'"
-    $release.assets.browser_download_url | Where-Object { $_ -like "*$script:ArchiveExtension" } | ForEach-Object {
-        [pscustomobject]@{
-            Name    = $_.Split('/')[-1].Split('.')[0]
-            Version = $version
-            URL     = $_
-        }
-    } | Where-Object { $_.Name -like "$Name" }
+    $script:NerdFonts | Where-Object { $_.Name -like $Name }
 }
