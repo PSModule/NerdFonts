@@ -25,7 +25,7 @@
     $version = $release.tag_name
     Write-Verbose "Latest release: $version"
     Write-Verbose "Selecting assets by name: '$Name'"
-    $release.assets.browser_download_url | Where-Object { $_ -like '*.zip' } | ForEach-Object {
+    $release.assets.browser_download_url | Where-Object { $_ -like '*.tar.xz' } | ForEach-Object {
         [pscustomobject]@{
             Name    = $_.Split('/')[-1].Split('.')[0]
             Version = $version

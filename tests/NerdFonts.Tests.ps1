@@ -48,7 +48,7 @@ Describe 'Module' {
 
         It '[Install-NerdFont] - Installs all fonts' {
             { Install-NerdFont -All -Verbose } | Should -Not -Throw
-            Get-Font -Name 'VictorMono' | Should -Not -BeNullOrEmpty
+            Get-Font -Name 'VictorMono*' | Should -Not -BeNullOrEmpty
         }
     }
 }
