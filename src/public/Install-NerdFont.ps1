@@ -35,8 +35,7 @@ function Install-NerdFont {
 
         # Specify the scope of where to install the font(s).
         [Parameter()]
-        [ValidateSet('CurrentUser', 'AllUsers')]
-        [string] $Scope = 'CurrentUser'
+        [Scope] $Scope = 'CurrentUser'
     )
 
     DynamicParam {
@@ -66,8 +65,7 @@ Please run the command again with elevated rights (Run as Administrator) or prov
 '@
             throw $errorMessage
         }
-        $NerdFonts = Get-NerdFonts
-        $NerdFontsToInstall = @()
+        $nerdFontsToInstall = @()
 
         $tempPath = Join-Path -Path $HOME -ChildPath '.temp'
         if (-not (Test-Path -Path $tempPath -PathType Container)) {
@@ -81,37 +79,37 @@ Please run the command again with elevated rights (Run as Administrator) or prov
 
     process {
         if ($All) {
-            $NerdFontsToInstall = $NerdFonts
+            $nerdFontsToInstall = $script:NerdFonts
         } else {
-            foreach ($FontName in $Name) {
-                $NerdFontsToInstall += $NerdFonts | Where-Object Name -EQ $FontName
+            foreach ($fontName in $Name) {
+                $nerdFontsToInstall += $script:NerdFonts | Where-Object Name -EQ $fontName
             }
         }
 
-        Write-Verbose "[$Scope] - Installing [$($NerdFontsToInstall.count)] fonts"
+        Write-Verbose "[$Scope] - Installing [$($nerdFontsToInstall.count)] fonts"
 
-        foreach ($NerdFont in $NerdFontsToInstall) {
+        foreach ($NerdFont in $nerdFontsToInstall) {
             $URL = $NerdFont.URL
-            $FontName = $NerdFont.Name
+            $fontName = $NerdFont.Name
             $downloadPath = Join-Path -Path $tempPath -ChildPath "$FontName$script:ArchiveExtension"
-            $extractPath = Join-Path -Path $tempPath -ChildPath "$FontName"
+            $extractPath = Join-Path -Path $tempPath -ChildPath "$fontName"
 
-            Write-Verbose "[$FontName] - Downloading to [$downloadPath]"
+            Write-Verbose "[$fontName] - Downloading to [$downloadPath]"
             $storedProgressPreference = $ProgressPreference
             $ProgressPreference = 'SilentlyContinue' # Suppress progress bar
-            if ($PSCmdlet.ShouldProcess($FontName, "Download $FontName")) {
+            if ($PSCmdlet.ShouldProcess($fontName, "Download $fontName")) {
                 Invoke-WebRequest -Uri $URL -OutFile $downloadPath -Verbose:$false
             }
             $ProgressPreference = $storedProgressPreference
 
-            Write-Verbose "[$FontName] - Unpack to [$extractPath]"
-            if ($PSCmdlet.ShouldProcess($FontName, 'Extract archive')) {
+            Write-Verbose "[$fontName] - Unpack to [$extractPath]"
+            if ($PSCmdlet.ShouldProcess($fontName, 'Extract archive')) {
                 Expand-Archive -Path $downloadPath -DestinationPath $extractPath -Force
                 Remove-Item -Path $downloadPath -Force
             }
 
-            Write-Verbose "[$FontName] - Install to [$Scope]"
-            if ($PSCmdlet.ShouldProcess($FontName, 'Install font')) {
+            Write-Verbose "[$fontName] - Install to [$Scope]"
+            if ($PSCmdlet.ShouldProcess($fontName, 'Install font')) {
                 Install-Font -Path $extractPath -Scope $Scope
                 Remove-Item -Path $extractPath -Force -Recurse
             }
