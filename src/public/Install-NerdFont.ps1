@@ -38,7 +38,7 @@ function Install-NerdFont {
         [Scope] $Scope = 'CurrentUser'
     )
 
-    DynamicParam {
+    dynamicparam {
         $DynamicParamDictionary = New-DynamicParamDictionary
 
         $dynPath = @{
