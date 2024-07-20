@@ -21,8 +21,10 @@ permissions:
   contents: write
   pull-requests: write
   statuses: write
+  pages: write
+  id-token: write
 
 jobs:
   Process-PSModule:
-    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v1
+    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v2
     secrets: inherit
