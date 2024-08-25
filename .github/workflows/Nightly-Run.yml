@@ -7,8 +7,10 @@ on:
 
 permissions:
   contents: read
+  pull-requests: write
+  statuses: write
 
 jobs:
   Process-PSModule:
-    uses: PSModule/Process-PSModule/.github/workflows/CI.yml@v2
+    uses: PSModule/Process-PSModule/.github/workflows/CI.yml@v3
     secrets: inherit
