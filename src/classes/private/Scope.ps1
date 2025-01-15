@@ -1,4 +1,4 @@
-enum Scope {
+﻿enum Scope {
     CurrentUser
     AllUsers
 }
