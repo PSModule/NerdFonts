@@ -1,5 +1,4 @@
-﻿#Requires -Modules @{ ModuleName = 'Admin'; RequiredVersion = '1.1.2' }
-#Requires -Modules @{ ModuleName = 'Fonts'; RequiredVersion = '1.1.12' }
+﻿#Requires -Modules @{ ModuleName = 'Fonts'; RequiredVersion = '1.1.13' }
 
 function Install-NerdFont {
     <#
