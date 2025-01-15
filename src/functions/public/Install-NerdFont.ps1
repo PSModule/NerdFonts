@@ -1,4 +1,5 @@
-﻿#Requires -Modules Admin, Fonts
+﻿#Requires -Modules @{ ModuleName = 'Admin'; RequiredVersion = '1.1.2' }
+#Requires -Modules @{ ModuleName = 'Fonts'; RequiredVersion = '1.1.12' }
 
 function Install-NerdFont {
     <#
@@ -12,6 +13,11 @@ function Install-NerdFont {
         Install-NerdFont -Name 'Fira Code'
 
         Installs the font 'Fira Code' to the current user.
+
+        .EXAMPLE
+        Install-NerdFont -Name 'Ubuntu*'
+
+        Installs all fonts that match the pattern 'Ubuntu*' to the current user.
 
         .EXAMPLE
         Install-NerdFont -Name 'Fira Code' -Scope AllUsers
@@ -29,16 +35,17 @@ function Install-NerdFont {
     )]
     [Alias('Install-NerdFonts')]
     param(
-        # Specify the name of the Nerd font(s) to install.
+        # Specify the name of the NerdFont(s) to install.
         [Parameter(
             ParameterSetName = 'ByName',
             Mandatory,
             ValueFromPipeline,
             ValueFromPipelineByPropertyName
         )]
+        [SupportsWildcards()]
         [string[]] $Name,
 
-        # Specify to install all Nerd Font(s).
+        # Specify to install all NerdFont(s).
         [Parameter(
             ParameterSetName = 'All',
             Mandatory
@@ -47,7 +54,11 @@ function Install-NerdFont {
 
         # Specify the scope of where to install the font(s).
         [Parameter()]
-        [Scope] $Scope = 'CurrentUser'
+        [Scope] $Scope = 'CurrentUser',
+
+        # Force will overwrite existing fonts
+        [Parameter()]
+        [switch] $Force
     )
 
     begin {
@@ -60,14 +71,12 @@ Please run the command again with elevated rights (Run as Administrator) or prov
         }
         $nerdFontsToInstall = @()
 
-        $tempPath = Join-Path -Path $HOME -ChildPath '.nerdfonts'
+        $guid = (New-Guid).Guid
+        $tempPath = Join-Path -Path $HOME -ChildPath "NerdFonts-$guid"
         if (-not (Test-Path -Path $tempPath -PathType Container)) {
             Write-Verbose "Create folder [$tempPath]"
             $null = New-Item -Path $tempPath -ItemType Directory
-            $tempFolderCreated = $true
         }
-
-        $Name = $PSBoundParameters.Name
     }
 
     process {
@@ -75,45 +84,40 @@ Please run the command again with elevated rights (Run as Administrator) or prov
             $nerdFontsToInstall = $script:NerdFonts
         } else {
             foreach ($fontName in $Name) {
-                $nerdFontsToInstall += $script:NerdFonts | Where-Object Name -EQ $fontName
+                $nerdFontsToInstall += $script:NerdFonts | Where-Object { $_.Name -like $fontName }
             }
         }
 
         Write-Verbose "[$Scope] - Installing [$($nerdFontsToInstall.count)] fonts"
 
-        foreach ($NerdFont in $nerdFontsToInstall) {
-            $URL = $NerdFont.URL
-            $fontName = $NerdFont.Name
+        foreach ($nerdFont in $nerdFontsToInstall) {
+            $URL = $nerdFont.URL
+            $fontName = $nerdFont.Name
             $downloadFileName = Split-Path -Path $URL -Leaf
             $downloadPath = Join-Path -Path $tempPath -ChildPath $downloadFileName
-            $extractPath = Join-Path -Path $tempPath -ChildPath $fontName
 
             Write-Verbose "[$fontName] - Downloading to [$downloadPath]"
-            $storedProgressPreference = $ProgressPreference
-            $ProgressPreference = 'SilentlyContinue' # Suppress progress bar
-            if ($PSCmdlet.ShouldProcess($fontName, "Download $fontName")) {
-                Invoke-WebRequest -Uri $URL -OutFile $downloadPath -Verbose:$false
+            if ($PSCmdlet.ShouldProcess("[$fontName] to [$downloadPath]", 'Download')) {
+                Invoke-WebRequest -Uri $URL -OutFile $downloadPath -RetryIntervalSec 5 -MaximumRetryCount 5
             }
-            $ProgressPreference = $storedProgressPreference
 
-            Write-Verbose "[$fontName] - Unpack to [$extractPath]"
-            if ($PSCmdlet.ShouldProcess($fontName, 'Extract archive')) {
+            $extractPath = Join-Path -Path $tempPath -ChildPath $fontName
+            Write-Verbose "[$fontName] - Extract to [$extractPath]"
+            if ($PSCmdlet.ShouldProcess("[$fontName] to [$extractPath]", 'Extract')) {
                 Expand-Archive -Path $downloadPath -DestinationPath $extractPath -Force
                 Remove-Item -Path $downloadPath -Force
             }
 
             Write-Verbose "[$fontName] - Install to [$Scope]"
-            if ($PSCmdlet.ShouldProcess($fontName, 'Install font')) {
-                Install-Font -Path $extractPath -Scope $Scope
+            if ($PSCmdlet.ShouldProcess("[$fontName] to [$Scope]", 'Install font')) {
+                Install-Font -Path $extractPath -Scope $Scope -Force:$Force
                 Remove-Item -Path $extractPath -Force -Recurse
             }
         }
     }
 
     end {
-        if ($tempFolderCreated) {
-            Write-Verbose "Remove folder [$tempPath]"
-        }
+        Write-Verbose "Remove folder [$tempPath]"
     }
 
     clean {

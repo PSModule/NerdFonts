@@ -29,3 +29,4 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           VALIDATE_MARKDOWN_PRETTIER: false
           VALIDATE_YAML_PRETTIER: false
+          VALIDATE_POWERSHELL: false # Need to resolve dependencies before running source code tests. This cannot find the Admin module.
