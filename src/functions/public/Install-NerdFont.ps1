@@ -60,7 +60,7 @@ Please run the command again with elevated rights (Run as Administrator) or prov
         }
         $nerdFontsToInstall = @()
 
-        $tempPath = Join-Path -Path $HOME -ChildPath '.temp'
+        $tempPath = Join-Path -Path $HOME -ChildPath '.nerdfonts'
         if (-not (Test-Path -Path $tempPath -PathType Container)) {
             Write-Verbose "Create folder [$tempPath]"
             $null = New-Item -Path $tempPath -ItemType Directory
@@ -112,7 +112,10 @@ Please run the command again with elevated rights (Run as Administrator) or prov
     end {
         if ($tempFolderCreated) {
             Write-Verbose "Remove folder [$tempPath]"
-            Remove-Item -Path $tempPath -Force
         }
+    }
+
+    clean {
+        Remove-Item -Path $tempPath -Force
     }
 }

@@ -1,0 +1,22 @@
+name: Update-FontsData
+
+on:
+  push:
+    branches-ignore:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  Update-FontsData:
+    name: Update-FontsData
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Update-FontsData
+        uses: PSModule/GitHub-Script@v1
+        with:
+          Script: . 'scripts/Update-FontsData.ps1'

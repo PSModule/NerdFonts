@@ -9,5 +9,11 @@ foreach ($fontArchive in $fontArchives) {
     }
 }
 
-New-Item -Path 'data\NerdFonts.json' -ItemType File -Force
-$fonts | ConvertTo-Json | Set-Content -Path 'data\NerdFonts.json' -Force
+$parentFolder = Split-Path -Path $PSScriptRoot -Parent
+$filePath = Join-Path -Path $parentFolder -ChildPath 'src\FontsData.json'
+$null = New-Item -Path $filePath -ItemType File -Force
+$fonts | ConvertTo-Json | Set-Content -Path $filePath -Force
+
+git add .
+git commit -m 'Update-FontsData'
+git push

@@ -1,1 +1,1 @@
-﻿$script:NerdFonts = Invoke-RestMethod -Uri 'https://raw.githubusercontent.com/PSModule/NerdFonts/refs/heads/main/data/NerdFonts.json'
+﻿$script:NerdFonts = Get-Content -Path (Join-Path -Path $PSScriptRoot -ChildPath 'FontsData.json') | ConvertFrom-Json
