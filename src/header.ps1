@@ -1,1 +1,1 @@
-﻿using module @{ ModuleName = 'Admin'; RequiredVersion = '1.1.2' }
+﻿using module @{ ModuleName = 'Fonts'; RequiredVersion = '1.1.12' }
