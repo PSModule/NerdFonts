@@ -3,7 +3,7 @@ $fonts = @()
 $fontArchives = $release.assets.browser_download_url | Where-Object { $_ -like '*.zip' }
 
 foreach ($fontArchive in $fontArchives) {
-    $fonts += @{
+    $fonts += [ordered]@{
         Name = $fontArchive.Split('/')[-1].Split('.')[0]
         URL  = $fontArchive
     }
