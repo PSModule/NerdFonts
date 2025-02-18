@@ -1,4 +1,4 @@
-﻿Connect-GitHubApp -Organization PSModule
+﻿Connect-GitHubApp -Organization PSModule -Default
 
 git checkout main
 git pull
