@@ -4,10 +4,17 @@
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
+!.vscode/*.code-snippets
+
 *.code-workspace
 
 # Local History for Visual Studio Code
 .history/*
 
-# The Powershell build outputs folder
+# PSModule framework outputs folder
 outputs/*
+
+# .Net build output
+bin/
+obj/
+libs/
