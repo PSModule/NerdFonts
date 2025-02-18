@@ -21,3 +21,6 @@ jobs:
           ClientID: ${{ secrets.NERDFONTS_UPDATER_BOT_CLIENT_ID }}
           PrivateKey: ${{ secrets.NERDFONTS_UPDATER_BOT_PRIVATE_KEY }}
           Script: scripts/Update-FontsData.ps1
+          ShowInit: true
+          Debug: true
+          Verbose: true

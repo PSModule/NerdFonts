@@ -5,15 +5,15 @@ LogGroup 'gh auth' {
 }
 
 LogGroup "git config global" {
-    Get-GitHubGitConfig -Scope global
+    Get-GitHubGitConfig -Scope global | Format-List
 }
 
 LogGroup "git config local" {
-    Get-GitHubGitConfig -Scope local
+    Get-GitHubGitConfig -Scope local | Format-List
 }
 
 LogGroup "git config system" {
-    Get-GitHubGitConfig -Scope system
+    Get-GitHubGitConfig -Scope system | Format-List
 }
 
 
