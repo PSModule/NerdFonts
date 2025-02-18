@@ -1,12 +1,11 @@
 name: Update-FontsData
 
 on:
-  push:
-    branches-ignore:
-      - main
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * *'
 
-permissions:
-  contents: write
+permissions: {}
 
 jobs:
   Update-FontsData:
@@ -19,4 +18,6 @@ jobs:
       - name: Update-FontsData
         uses: PSModule/GitHub-Script@v1
         with:
-          Script: . 'scripts/Update-FontsData.ps1'
+          ClientID: ${{ secrets.NERDFONTS_UPDATER_BOT_CLIENT_ID }}
+          PrivateKey: ${{ secrets.NERDFONTS_UPDATER_BOT_PRIVATE_KEY }}
+          Script: scripts/Update-FontsData.ps1
