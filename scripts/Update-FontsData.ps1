@@ -1,5 +1,23 @@
 ﻿Connect-GitHubApp -Organization PSModule -Default
 
+LogGroup 'gh auth' {
+    gh auth status
+}
+
+LogGroup "git config global" {
+    Get-GitHubGitConfig -Scope global
+}
+
+LogGroup "git config local" {
+    Get-GitHubGitConfig -Scope local
+}
+
+LogGroup "git config system" {
+    Get-GitHubGitConfig -Scope system
+}
+
+
+
 git checkout main
 git pull
 
