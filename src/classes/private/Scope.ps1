@@ -1,4 +1,0 @@
-﻿enum Scope {
-    CurrentUser
-    AllUsers
-}

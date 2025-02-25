@@ -51,9 +51,9 @@ function Install-NerdFont {
         )]
         [switch] $All,
 
-        # Specify the scope of where to install the font(s).
         [Parameter()]
-        [Scope] $Scope = 'CurrentUser',
+        [ValidateSet('CurrentUser', 'AllUsers')]
+        [string] $Scope = 'CurrentUser',
 
         # Force will overwrite existing fonts
         [Parameter()]
