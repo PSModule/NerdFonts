@@ -1,4 +1,25 @@
-﻿Describe 'Module' {
+﻿#Requires -Modules @{ ModuleName = 'Pester'; RequiredVersion = '5.7.1' }
+
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute(
+    'PSUseDeclaredVarsMoreThanAssignments', '',
+    Justification = 'Pester grouping syntax: known issue.'
+)]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute(
+    'PSAvoidUsingConvertToSecureStringWithPlainText', '',
+    Justification = 'Used to create a secure string for testing.'
+)]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute(
+    'PSAvoidUsingWriteHost', '',
+    Justification = 'Log outputs to GitHub Actions logs.'
+)]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute(
+    'PSAvoidLongLines', '',
+    Justification = 'Long test descriptions and skip switches'
+)]
+[CmdletBinding()]
+param()
+
+Describe 'Module' {
     Context 'Function: Get-NerdFont' {
         It 'Returns all fonts' {
             $fonts = Get-NerdFont
@@ -23,8 +44,5 @@
             { Install-NerdFont -All -Verbose } | Should -Not -Throw
             Get-Font -Name 'VictorMono*' | Should -Not -BeNullOrEmpty
         }
-    }
-    Context 'Test' {
-        Write-Host "$(Get-Module -ListAvailable | Format-Table -AutoSize | Out-String)"
     }
 }
