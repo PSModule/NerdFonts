@@ -24,4 +24,7 @@
             Get-Font -Name 'VictorMono*' | Should -Not -BeNullOrEmpty
         }
     }
+    Context 'Test' {
+        Write-Host "$(Get-Module -ListAvailable | Format-Table -AutoSize | Out-String)"
+    }
 }
