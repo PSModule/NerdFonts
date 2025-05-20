@@ -1,4 +1,5 @@
-﻿#Requires -Modules @{ ModuleName = 'Fonts'; RequiredVersion = '1.1.19' }
+﻿#Requires -Modules @{ ModuleName = 'Fonts'; RequiredVersion = '1.1.21' }
+#Requires -Modules @{ ModuleName = 'Admin'; RequiredVersion = '1.1.6' }
 
 function Install-NerdFont {
     <#
@@ -27,6 +28,14 @@ function Install-NerdFont {
         Install-NerdFont -All
 
         Installs all Nerd Fonts to the current user.
+
+        .LINK
+        https://psmodule.io/NerdFonts/Functions/Install-NerdFont
+
+        .NOTES
+        More information about the NerdFonts can be found at:
+        - [NerdFonts | Website](https://www.nerdfonts.com/)
+        - [NerdFonts | GitHub](https://github.com/ryanoasis/nerd-fonts)
     #>
     [CmdletBinding(
         DefaultParameterSetName = 'ByName',

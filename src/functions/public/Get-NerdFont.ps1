@@ -20,6 +20,14 @@
         Get-NerdFonts -Name '*Code'
 
         Get the NerdFont with the name ending with 'Code'.
+
+        .LINK
+        https://psmodule.io/NerdFonts/Functions/Get-NerdFont
+
+        .NOTES
+        More information about the NerdFonts can be found at:
+        - [NerdFonts | Website](https://www.nerdfonts.com/)
+        - [NerdFonts | GitHub](https://github.com/ryanoasis/nerd-fonts)
     #>
     [Alias('Get-NerdFonts')]
     [OutputType([System.Object[]])]
