@@ -26,8 +26,7 @@
 
         .NOTES
         More information about the NerdFonts can be found at:
-        - [NerdFonts | Website](https://www.nerdfonts.com/)
-        - [NerdFonts | GitHub](https://github.com/ryanoasis/nerd-fonts)
+        [NerdFonts](https://www.nerdfonts.com/) | [GitHub](https://github.com/ryanoasis/nerd-fonts)
     #>
     [Alias('Get-NerdFonts')]
     [OutputType([System.Object[]])]
