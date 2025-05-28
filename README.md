@@ -52,6 +52,28 @@ This requires the shell to run in an elevated context (sudo or run as administra
 Install-NerdFont -All -Scope AllUsers
 ```
 
+### Using with DSC (Desired State Configuration)
+
+This module includes a class-based DSCv2 resource that can be used to declaratively install NerdFonts.
+
+```powershell
+# Install a specific NerdFont using DSC
+NerdFont 'InstallHackFont' {
+    Name = 'Hack'
+    Ensure = 'Present'
+    Scope = 'CurrentUser'
+}
+
+# Install all NerdFonts for all users
+NerdFont 'InstallAllNerdFonts' {
+    All = $true
+    Ensure = 'Present'
+    Scope = 'AllUsers'
+}
+```
+
+For more details on the DSC resource, see the [DSC documentation](/src/dsc/README.md).
+
 ## Contributing
 
 Coder or not, you can contribute to the project! We welcome all contributions.
