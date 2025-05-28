@@ -1,5 +1,13 @@
 using namespace System.Collections.Generic
 
+# Define the Ensure enum if it doesn't exist
+if (-not ([System.Management.Automation.PSTypeName]'Ensure').Type) {
+    enum Ensure {
+        Absent
+        Present
+    }
+}
+
 <#
     .SYNOPSIS
         DSC resource for managing NerdFonts installation.
