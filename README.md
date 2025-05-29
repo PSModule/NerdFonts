@@ -9,7 +9,7 @@ All donations on this repository will go to the NerdFonts project.
 
 ## Prerequisites
 
-- **PowerShell 7.0 or higher** - This module requires modern PowerShell (not Windows PowerShell). You can install PowerShell from the [Microsoft Store](https://apps.microsoft.com/store/detail/powershell/9MZ1SNWT0N5D) or download it from the [official PowerShell repository](https://github.com/PowerShell/PowerShell/releases).
+- **PowerShell 7.0 or higher** - This module requires modern PowerShell (not Windows PowerShell). You can install PowerShell by following the [official installation guide](https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell).
 - This module depends on the [Fonts](https://psmodule.io/Fonts) module to manage fonts on the system.
 
 ## Installation
