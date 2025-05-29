@@ -9,8 +9,8 @@ All donations on this repository will go to the NerdFonts project.
 
 ## Prerequisites
 
-- **The latest version of PowerShell (not Windows PowerShell)** - Learn more about [PowerShell](https://learn.microsoft.com/en-us/powershell/scripting/overview?view=powershell-7.5) and install it by following the [official installation guide](https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell). This module is cross-platform and supports PowerShell on Windows, Linux, and macOS.
-- This module depends on the [Fonts](https://psmodule.io/Fonts) module to manage fonts on the system.
+- This module is cross-platform and supports the latest LTS version of [PowerShell](https://learn.microsoft.com/en-us/powershell/scripting/overview) on Windows, Linux, and macOS. This is not to be confused with Windows PowerShell. Install PowerShell by following the [official installation guide](https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell). 
+- This module depends on the [Fonts](https://psmodule.io/Fonts) module to manage fonts on the system. This will be installed automatically when installing the module.
 
 ## Installation
 
