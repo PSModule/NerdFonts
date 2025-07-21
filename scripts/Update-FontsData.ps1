@@ -1,12 +1,45 @@
-﻿git checkout main
-git pull
+﻿function Invoke-NativeCommand {
+    <#
+        .SYNOPSIS
+        Executes a native command with arguments.
+    #>
+    [Alias('Exec', 'Run')]
+    [CmdletBinding()]
+    param (
+        # The command to execute
+        [Parameter(Mandatory, Position = 0)]
+        [string]$Command,
+
+        # The arguments to pass to the command
+        [Parameter(ValueFromRemainingArguments)]
+        [string[]]$Arguments
+    )
+
+    Write-Debug "Command: $Command"
+    Write-Debug "Arguments: $($Arguments -join ', ')"
+    $fullCommand = "$Command $($Arguments -join ' ')"
+
+    try {
+        Write-Verbose "Executing: $fullCommand"
+        & $Command @Arguments
+        if ($LASTEXITCODE -ne 0) {
+            $errorMessage = "Command failed with exit code $LASTEXITCODE`: $fullCommand"
+            Write-Error $errorMessage -ErrorId 'NativeCommandFailed' -Category OperationStopped -TargetObject $fullCommand
+        }
+    } catch {
+        throw
+    }
+}
+
+Run git checkout main
+Run git pull
 
 # 2. Retrieve the date-time to create a unique branch name.
 $timeStamp = Get-Date -Format 'yyyyMMdd-HHmmss'
 $branchName = "auto-font-update-$timeStamp"
 
 # 3. Create a new branch for the changes.
-git checkout -b $branchName
+Run git checkout -b $branchName
 
 # 4. Retrieve the latest font data from Nerd Fonts.
 $release = Get-GitHubRelease -Owner ryanoasis -Repository nerd-fonts
@@ -30,15 +63,17 @@ $fonts | ConvertTo-Json | Set-Content -Path $filePath -Force
 
 # 6. Check if anything actually changed.
 #    If git status --porcelain is empty, there are no new changes to commit.
-$changes = git status --porcelain
+$changes = Run git status --porcelain
+
+
 if (-not [string]::IsNullOrWhiteSpace($changes)) {
     # 7. Commit and push changes.
-    git add .
-    git commit -m "Update-FontsData via script on $timeStamp"
-    git push --set-upstream origin $branchName
+    Run git add .
+    Run git commit -m "Update-FontsData via script on $timeStamp"
+    Run git push --set-upstream origin $branchName
 
     # 8. Create a PR via GitHub CLI.
-    gh pr create `
+    Run gh pr create `
         --base main `
         --head $branchName `
         --title "Auto-Update: NerdFonts Data ($timeStamp)" `
