@@ -17,7 +17,7 @@ $fontAssets = $release | Get-GitHubReleaseAsset | Where-Object { $_.Name -like '
 
 foreach ($fontArchive in $fontAssets) {
     $fonts += [PSCustomObject]@{
-        Name = $fontArchive.Name.Split('/')[-1].Split('.')[0]
+        Name = $fontArchive.Name.Split('.')[0]
         URL  = $fontArchive.Url
     }
 }
