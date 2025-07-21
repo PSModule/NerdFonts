@@ -11,14 +11,14 @@ $branchName = "auto-font-update-$timeStamp"
 git checkout -b $branchName
 
 # 4. Retrieve the latest font data from Nerd Fonts.
-$release = Invoke-RestMethod 'https://api.github.com/repos/ryanoasis/nerd-fonts/releases/latest'
+$release = Get-GitHubRelease -Owner ryanoasis -Repository nerd-fonts
 $fonts = @()
-$fontArchives = $release.assets.browser_download_url | Where-Object { $_ -like '*.zip' }
+$fontAssets = $release | Get-GitHubReleaseAsset | Where-Object { $_.Name -like '*.zip' }
 
-foreach ($fontArchive in $fontArchives) {
-    $fonts += [ordered]@{
-        Name = $fontArchive.Split('/')[-1].Split('.')[0]
-        URL  = $fontArchive
+foreach ($fontArchive in $fontAssets) {
+    $fonts += [PSCustomObject]@{
+        Name = $fontArchive.Name.Split('.')[0]
+        URL  = $fontArchive.Url
     }
 }
 
