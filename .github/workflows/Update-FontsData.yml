@@ -20,6 +20,4 @@ jobs:
       - name: Update-FontsData
         uses: PSModule/GitHub-Script@v1
         with:
-          ClientID: ${{ secrets.NERDFONTS_UPDATER_BOT_CLIENT_ID }}
-          PrivateKey: ${{ secrets.NERDFONTS_UPDATER_BOT_PRIVATE_KEY }}
           Script: scripts/Update-FontsData.ps1

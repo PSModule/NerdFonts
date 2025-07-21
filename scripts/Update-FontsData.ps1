@@ -1,6 +1,4 @@
-﻿Connect-GitHubApp -Organization PSModule -Default
-
-git checkout main
+﻿git checkout main
 git pull
 
 # 2. Retrieve the date-time to create a unique branch name.
