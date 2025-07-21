@@ -5,7 +5,8 @@ on:
   schedule:
     - cron: '0 0 * * *'
 
-permissions: {}
+permissions:
+  pull-requests: write
 
 jobs:
   Update-FontsData:
