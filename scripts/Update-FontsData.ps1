@@ -31,17 +31,12 @@
     }
 }
 
-Run git checkout main
-Run git pull
-
-# 2. Retrieve the date-time to create a unique branch name.
+Invoke-NativeCommand git checkout main
+Invoke-NativeCommand git pull
 $timeStamp = Get-Date -Format 'yyyyMMdd-HHmmss'
 $branchName = "auto-font-update-$timeStamp"
+Invoke-NativeCommand git checkout -b $branchName
 
-# 3. Create a new branch for the changes.
-Run git checkout -b $branchName
-
-# 4. Retrieve the latest font data from Nerd Fonts.
 $release = Get-GitHubRelease -Owner ryanoasis -Repository nerd-fonts
 $fonts = @()
 $fontAssets = $release | Get-GitHubReleaseAsset | Where-Object { $_.Name -like '*.zip' }
@@ -53,29 +48,22 @@ foreach ($fontArchive in $fontAssets) {
     }
 }
 
-$fonts | Sort-Object Name | Format-Table -AutoSize | Out-String
+LogGroup 'Latest Fonts' {
+    $fonts | Sort-Object Name | Format-Table -AutoSize | Out-String
+}
 
-# 5. Write results to FontsData.json.
 $parentFolder = Split-Path -Path $PSScriptRoot -Parent
 $filePath = Join-Path -Path $parentFolder -ChildPath 'src\FontsData.json'
-
-# Make sure file exists (or overwrite).
 $null = New-Item -Path $filePath -ItemType File -Force
 $fonts | ConvertTo-Json | Set-Content -Path $filePath -Force
 
-# 6. Check if anything actually changed.
-#    If git status --porcelain is empty, there are no new changes to commit.
-$changes = Run git status --porcelain
-
-
+$changes = Invoke-NativeCommand git status --porcelain
 if (-not [string]::IsNullOrWhiteSpace($changes)) {
-    # 7. Commit and push changes.
-    Run git add .
-    Run git commit -m "Update-FontsData via script on $timeStamp"
-    Run git push --set-upstream origin $branchName
+    Invoke-NativeCommand git add .
+    Invoke-NativeCommand git commit -m "Update-FontsData via script on $timeStamp"
+    Invoke-NativeCommand git push --set-upstream origin $branchName
 
-    # 8. Create a PR via GitHub CLI.
-    Run gh pr create `
+    Invoke-NativeCommand gh pr create `
         --base main `
         --head $branchName `
         --title "Auto-Update: NerdFonts Data ($timeStamp)" `
