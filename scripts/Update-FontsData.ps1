@@ -78,8 +78,6 @@ if ([string]::IsNullOrWhiteSpace($changes)) {
     return
 }
 
-Write-Output 'Changes detected:'
-Write-Output $changes
 Run git add .
 Run git commit -m "Update-FontsData via script on $timeStamp"
 Write-Output 'Changes in this commit:'
