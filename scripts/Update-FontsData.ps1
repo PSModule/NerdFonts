@@ -53,6 +53,8 @@ foreach ($fontArchive in $fontAssets) {
     }
 }
 
+$fonts | Sort-Object Name | Format-Table -AutoSize | Out-String
+
 # 5. Write results to FontsData.json.
 $parentFolder = Split-Path -Path $PSScriptRoot -Parent
 $filePath = Join-Path -Path $parentFolder -ChildPath 'src\FontsData.json'
