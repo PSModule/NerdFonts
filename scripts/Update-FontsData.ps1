@@ -80,10 +80,6 @@ if ([string]::IsNullOrWhiteSpace($changes)) {
 
 Write-Output 'Changes detected:'
 Write-Output $changes
-
-Write-Output 'Diff of changes to be committed:'
-Run git diff HEAD -- src/FontsData.json
-
 Run git add .
 Run git commit -m "Update-FontsData via script on $timeStamp"
 Write-Output 'Changes in this commit:'
