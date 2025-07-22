@@ -84,8 +84,27 @@ $fonts | ConvertTo-Json | Set-Content -Path $filePath -Force
 
 $changes = Invoke-NativeCommand git status --porcelain
 if (-not [string]::IsNullOrWhiteSpace($changes)) {
+    Write-Output 'Changes detected:'
+    Write-Output $changes
+
+    # Show what will be committed
+    Write-Output 'Diff of changes to be committed:'
+    Invoke-NativeCommand git diff --cached HEAD -- src/FontsData.json 2>$null
+    if ($LASTEXITCODE -ne 0) {
+        # If --cached doesn't work (no staged changes), show unstaged diff
+        Invoke-NativeCommand git diff HEAD -- src/FontsData.json
+    }
+
     Invoke-NativeCommand git add .
     Invoke-NativeCommand git commit -m "Update-FontsData via script on $timeStamp"
+
+    # Show the commit that was just created
+    Write-Output 'Commit created:'
+    Invoke-NativeCommand git log -1 --oneline
+
+    # Show diff between HEAD and previous commit
+    Write-Output 'Changes in this commit:'
+    Invoke-NativeCommand git diff HEAD~1 HEAD -- src/FontsData.json
 
     # Push behavior depends on branch type
     if ($targetBranch -eq $currentBranch -and $currentBranch -ne $defaultBranch) {
