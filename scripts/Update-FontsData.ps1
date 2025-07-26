@@ -33,6 +33,8 @@
     }
 }
 
+Install-PSResource -Repository PSGallery -TrustRepository -Name 'Json'
+
 Connect-GitHubApp -Organization 'PSModule' -Default
 $repo = Get-GitHubRepository -Owner 'PSModule' -Name 'NerdFonts'
 
@@ -78,7 +80,7 @@ LogGroup 'Getting latest fonts' {
     $parentFolder = Split-Path -Path $PSScriptRoot -Parent
     $filePath = Join-Path -Path $parentFolder -ChildPath 'src\FontsData.json'
     $null = New-Item -Path $filePath -ItemType File -Force
-    $fonts | ConvertTo-Json | Set-Content -Path $filePath -Force
+    $fonts | ConvertTo-Json | Format-Json -IndentationType Spaces -IndentationSize 4 | Set-Content -Path $filePath -Force
 }
 
 $changes = Run git status --porcelain
