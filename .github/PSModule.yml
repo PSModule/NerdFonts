@@ -1,0 +1,21 @@
+# This file is used to configure the Process-PSModule workflow.
+# Reference:
+# - https://github.com/PSModule/Process-PSModule?tab=readme-ov-file#configuration
+
+Test:
+  CodeCoverage:
+    PercentTarget: 0
+#   TestResults:
+#     Skip: true
+#   SourceCode:
+#     Skip: true
+#   PSModule:
+#     Skip: true
+#   Module:
+#     Windows:
+#       Skip: true
+#     MacOS:
+#       Skip: true
+# Build:
+#   Docs:
+#     Skip: true
