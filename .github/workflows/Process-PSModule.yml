@@ -1,8 +1,9 @@
 name: Process-PSModule
 
-run-name: "Process-PSModule - [${{ github.event.pull_request.title }} #${{ github.event.pull_request.number }}] by @${{ github.actor }}"
-
 on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * *'
   pull_request:
     branches:
       - main
@@ -26,5 +27,5 @@ permissions:
 
 jobs:
   Process-PSModule:
-    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v4
+    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@v5
     secrets: inherit
