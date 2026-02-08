@@ -38,6 +38,9 @@ Install-PSResource -Repository PSGallery -TrustRepository -Name 'Json'
 Connect-GitHubApp -Organization 'PSModule' -Default
 $repo = Get-GitHubRepository -Owner 'PSModule' -Name 'NerdFonts'
 
+# Constants for PR management
+$AUTO_UPDATE_PR_PREFIX = 'Auto-Update'
+
 LogGroup 'Checkout' {
     $currentBranch = (Run git rev-parse --abbrev-ref HEAD).Trim()
     $defaultBranch = $repo.DefaultBranch
@@ -114,8 +117,8 @@ $changes
 LogGroup 'Close superseded PRs' {
     Write-Output 'Checking for existing open font data update PRs...'
     
-    # Get all open PRs with "Auto-Update" in the title
-    $openPRsJson = Run gh pr list --state open --json number,title,headRefName --search 'Auto-Update in:title'
+    # Get all open PRs with the auto-update prefix in the title
+    $openPRsJson = Run gh pr list --state open --json number,title,headRefName --search "$AUTO_UPDATE_PR_PREFIX in:title"
     
     if (-not [string]::IsNullOrWhiteSpace($openPRsJson)) {
         $openPRs = $openPRsJson | ConvertFrom-Json
@@ -160,7 +163,7 @@ LogGroup 'Process changes' {
         Run gh pr create `
             --base $defaultBranch `
             --head $targetBranch `
-            --title "Auto-Update $timeStamp" `
+            --title "$AUTO_UPDATE_PR_PREFIX $timeStamp" `
             --body 'This PR updates FontsData.json with the latest metadata.'
 
         Write-Output "Changes detected and PR opened for branch: $targetBranch"
