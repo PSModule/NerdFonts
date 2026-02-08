@@ -111,6 +111,45 @@ $changes
 
 }
 
+LogGroup 'Close superseded PRs' {
+    Write-Output 'Checking for existing open font data update PRs...'
+    
+    # Get all open PRs with "Auto-Update" in the title
+    $openPRsJson = Run gh pr list --state open --json number,title,headRefName --search 'Auto-Update in:title'
+    
+    if (-not [string]::IsNullOrWhiteSpace($openPRsJson)) {
+        $openPRs = $openPRsJson | ConvertFrom-Json
+        
+        if ($openPRs.Count -gt 0) {
+            Write-Output "Found $($openPRs.Count) existing open font data update PR(s)"
+            
+            foreach ($pr in $openPRs) {
+                # Skip the current branch if we're updating an existing PR
+                if ($pr.headRefName -eq $targetBranch) {
+                    Write-Output "Skipping PR #$($pr.number) as it's the current branch: $targetBranch"
+                    continue
+                }
+                
+                Write-Output "Closing superseded PR #$($pr.number): $($pr.title)"
+                
+                $supersedenceMessage = if ($targetBranch -eq $currentBranch -and $currentBranch -ne $defaultBranch) {
+                    "This PR has been superseded by updates to branch ``$targetBranch``."
+                } else {
+                    "This PR has been superseded by a newer font data update."
+                }
+                
+                # Close the PR with a comment
+                Run gh pr close $pr.number --comment $supersedenceMessage
+                Write-Output "Closed PR #$($pr.number)"
+            }
+        } else {
+            Write-Output 'No existing open font data update PRs found.'
+        }
+    } else {
+        Write-Output 'No existing open font data update PRs found.'
+    }
+}
+
 LogGroup 'Process changes' {
     if ($targetBranch -eq $currentBranch -and $currentBranch -ne $defaultBranch) {
         Run git push origin $targetBranch
