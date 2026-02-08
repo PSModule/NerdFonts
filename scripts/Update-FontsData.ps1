@@ -139,7 +139,7 @@ LogGroup 'Close superseded PRs' {
                 }
                 
                 # Close the PR with a comment
-                Run gh pr close $pr.number --comment $supersedenceMessage
+                Run gh pr close $($pr.number) --comment $supersedenceMessage
                 Write-Output "Closed PR #$($pr.number)"
             }
         } else {
