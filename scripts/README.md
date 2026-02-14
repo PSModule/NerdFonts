@@ -1,49 +1,88 @@
 # Font Data Updater
 
-This directory contains the automated font data updater script that keeps the NerdFonts module synchronized with the latest fonts from the [ryanoasis/nerd-fonts](https://github.com/ryanoasis/nerd-fonts) repository.
+This directory contains scripts for automating the maintenance of the NerdFonts module.
 
 ## Update-FontsData.ps1
 
-The `Update-FontsData.ps1` script is automatically run on a daily schedule via GitHub Actions. It performs the following tasks:
+This script automatically updates the `src/FontsData.json` file with the latest font metadata from the
+[ryanoasis/nerd-fonts](https://github.com/ryanoasis/nerd-fonts) repository.
 
-1. **Fetch Latest Fonts**: Retrieves the latest font release metadata from the NerdFonts repository
-2. **Update Font Data**: Updates the `src/FontsData.json` file with the latest font information
-3. **Create/Update PR**: Creates a pull request with the changes or updates an existing branch
-4. **PR Supersedence**: Automatically closes older, superseded font update PRs
+### Features
 
-## PR Supersedence Behavior
+- **Automatic Updates**: Runs daily via GitHub Actions to fetch the latest font data
+- **PR Supersedence**: Automatically closes older update pull requests when a new update is created
+- **Clean Repository**: Ensures only the most recent update PR remains open
 
-Similar to Dependabot's PR lifecycle management, the updater implements automatic PR supersedence:
+### How It Works
 
-### When Creating a New PR
+1. **Scheduled Execution**: The script runs daily at midnight UTC via the `Update-FontsData` workflow
+2. **Data Fetching**: Retrieves the latest font release metadata from the NerdFonts repository
+3. **Change Detection**: Compares new data with existing `FontsData.json`
+4. **PR Creation**: If changes are detected:
+   - Creates a new branch named `auto-update-YYYYMMDD-HHmmss`
+   - Commits the updated `FontsData.json`
+   - Opens a pull request with title `Auto-Update YYYYMMDD-HHmmss`
+5. **PR Supersedence**: After creating a new PR, the script:
+   - Searches for existing open PRs with titles matching `Auto-Update*` (excluding the newly created PR)
+   - Closes each superseded PR with a comment referencing the new PR number
+   - Deletes the branches associated with superseded PRs
+   - Ensures only the latest update PR remains open
 
-When the updater creates a new font data update PR:
-- It searches for existing open PRs with "Auto-Update" in the title
-- Automatically closes those older PRs with a comment: "This PR has been superseded by a newer font data update."
-- Creates the new PR with the latest changes
+### PR Lifecycle Management
 
-### When Updating an Existing Branch
+The font data updater implements PR supersedence similar to Dependabot. When a new update PR is created:
 
-When the updater pushes changes to an existing update branch:
-- It searches for other open font update PRs
-- Closes them with a comment indicating which branch supersedes them
-- Updates the existing branch with the latest changes
+- The script first creates the new PR
+- Then checks for existing open `Auto-Update*` PRs (excluding the newly created one)
+- Each existing PR receives a comment referencing the new PR number:
 
-### Benefits
+  ```text
+  This PR has been superseded by #[NEW_PR_NUMBER] and will be closed automatically.
 
-This approach:
-- Keeps the repository tidy by removing outdated update PRs
-- Prevents confusion about which PR should be reviewed/merged
-- Streamlines the review and merge process
-- Mirrors the familiar behavior of Dependabot
+  The font data has been updated in the newer PR. Please refer to #[NEW_PR_NUMBER] for the most current changes.
+  ```
 
-## Workflow
+- All superseded PRs are automatically closed
+- Branches for closed PRs are deleted
 
-The updater runs via the `.github/workflows/Update-FontsData.yml` workflow:
-- **Schedule**: Daily at midnight UTC
-- **Manual**: Can be triggered via workflow_dispatch
-- **Authentication**: Uses GitHub App credentials for enhanced permissions
+This means there is no need for a separate cleanup workflow on merge — by the time a PR is merged,
+it is already the only open Auto-Update PR.
 
-## Customization
+### Workflow
 
-The supersedence message can be modified by editing the `$supersedenceMessage` variable in the script.
+#### Update-FontsData.yml
+
+Handles the scheduled updates, PR creation, and supersedence:
+
+- **Trigger**: Daily at midnight UTC, or manual via `workflow_dispatch`
+- **Authentication**: Uses GitHub App credentials for API access
+
+### Manual Execution
+
+You can manually trigger an update using the GitHub Actions UI:
+
+1. Go to the **Actions** tab in the repository
+2. Select the **Update-FontsData** workflow
+3. Click **Run workflow**
+4. Select the branch and click **Run workflow**
+
+### Configuration
+
+The supersedence behavior is built into the script and requires no additional configuration. The message
+posted when closing superseded PRs can be customized by modifying `scripts/Update-FontsData.ps1`.
+
+### Development
+
+To test changes to the update script:
+
+1. Create a feature branch
+2. Modify `scripts/Update-FontsData.ps1`
+3. Push the branch
+4. Manually trigger the workflow on your feature branch
+5. The script will detect it's running on a feature branch and update the existing branch instead of
+   creating a new PR
+
+### Troubleshooting
+
+- **No updates available**: If the NerdFonts release contains the same data, no PR will be created
+- **Authentication errors**: Ensure the GitHub App credentials are correctly configured
