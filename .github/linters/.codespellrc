@@ -1,0 +1,3 @@
+[codespell]
+skip = ./.github/linters
+ignore-words-list = afterall
