@@ -1,5 +1,8 @@
-﻿#Requires -Modules @{ ModuleName = 'Fonts'; RequiredVersion = '1.1.21' }
-#Requires -Modules @{ ModuleName = 'Admin'; RequiredVersion = '1.1.6' }
+#Requires -PSEdition Core
+#Requires -Modules @{ ModuleName = 'Admin'; ModuleVersion = '1.1.6'; GUID = '70660c5c-30db-4787-861e-0a626ca8683c' }
+﻿#Requires -Modules @{ ModuleName = 'Fonts'; ModuleVersion = '1.1.21'; GUID = 'b6e7e61f-f8f5-4b0a-9fdd-f74a3311be0d' }
+
+Set-StrictMode -Version 3.0
 
 function Install-NerdFont {
     <#
@@ -57,77 +60,79 @@ function Install-NerdFont {
             ParameterSetName = 'All',
             Mandatory
         )]
-        [switch] $All,
+        [switch] ${All},
 
         [Parameter()]
         [ValidateSet('CurrentUser', 'AllUsers')]
-        [string] $Scope = 'CurrentUser',
+        [string] ${Scope} = 'CurrentUser',
 
         # Force will overwrite existing fonts
         [Parameter()]
-        [switch] $Force
+        [switch] ${Force}
     )
 
     begin {
-        if ($Scope -eq 'AllUsers' -and -not (IsAdmin)) {
-            $errorMessage = @'
-Administrator rights are required to install fonts.
-Please run the command again with elevated rights (Run as Administrator) or provide '-Scope CurrentUser' to your command."
-'@
-            throw $errorMessage
-        }
-        $nerdFontsToInstall = @()
+        if (${Scope} -eq 'AllUsers' -and -not (IsAdmin)) {
+            ${errorMessage} = @'
+Administrator privileges are required to install system-wide fonts.
 
-        $guid = (New-Guid).Guid
-        $tempPath = Join-Path -Path $HOME -ChildPath "NerdFonts-$guid"
-        if (-not (Test-Path -Path $tempPath -PathType Container)) {
-            Write-Verbose "Create folder [$tempPath]"
-            $null = New-Item -Path $tempPath -ItemType Directory
+Please run this command again with elevated permissions ("Run as Administrator") or append '-Scope CurrentUser' to it for a user-level install.
+'@
+            throw ${errorMessage}
+        }
+        ${nerdFontsToInstall} = @()
+
+        ${tempPath} = Join-Path -Path ${Env:TEMP} -ChildPath "NerdFonts-$([Convert]::ToString((Get-Random 16777216),16).PadLeft(6,'0'))"
+        if (-not (Test-Path -Path ${tempPath} -PathType Container)) {
+            Write-Verbose "Creating temporary download directory [${tempPath}]…"
+            ${null} = New-Item -Path ${tempPath} -ItemType Directory
         }
     }
 
     process {
-        if ($All) {
-            $nerdFontsToInstall = $script:NerdFonts
+        if (${All}) {
+            ${nerdFontsToInstall} = ${script:NerdFonts}
         } else {
-            foreach ($fontName in $Name) {
-                $nerdFontsToInstall += $script:NerdFonts | Where-Object { $_.Name -like $fontName }
+            foreach (${fontName} in ${Name}) {
+                ${nerdFontsToInstall} += ${script:NerdFonts} | Where-Object {
+                    $_.Name -like ${fontName}
+                }
             }
         }
 
-        Write-Verbose "[$Scope] - Installing [$($nerdFontsToInstall.count)] fonts"
+        Write-Verbose "[${Scope}] - Installing [$(${nerdFontsToInstall}.count)] fonts…"
 
-        foreach ($nerdFont in $nerdFontsToInstall) {
-            $URL = $nerdFont.URL
-            $fontName = $nerdFont.Name
-            $downloadFileName = Split-Path -Path $URL -Leaf
-            $downloadPath = Join-Path -Path $tempPath -ChildPath $downloadFileName
+        foreach (${nerdFont} in ${nerdFontsToInstall}) {
+            ${URL} = ${nerdFont}.URL
+            ${fontName} = ${nerdFont}.Name
+            ${downloadFileName} = Split-Path -Path ${URL} -Leaf
+            ${downloadPath} = Join-Path -Path ${tempPath} -ChildPath ${downloadFileName}
 
-            Write-Verbose "[$fontName] - Downloading to [$downloadPath]"
-            if ($PSCmdlet.ShouldProcess("[$fontName] to [$downloadPath]", 'Download')) {
-                Invoke-WebRequest -Uri $URL -OutFile $downloadPath -RetryIntervalSec 5 -MaximumRetryCount 5
+            Write-Verbose "[${fontName}] - Downloading to [${downloadPath}]…"
+            if (${PSCmdlet}.ShouldProcess("[${fontName}] to [${downloadPath}]", 'Download')) {
+                Invoke-WebRequest -Uri ${URL} -OutFile ${downloadPath} -RetryIntervalSec 5 -MaximumRetryCount 5
             }
 
-            $extractPath = Join-Path -Path $tempPath -ChildPath $fontName
-            Write-Verbose "[$fontName] - Extract to [$extractPath]"
-            if ($PSCmdlet.ShouldProcess("[$fontName] to [$extractPath]", 'Extract')) {
-                Expand-Archive -Path $downloadPath -DestinationPath $extractPath -Force
-                Remove-Item -Path $downloadPath -Force
+            ${extractPath} = Join-Path -Path ${tempPath} -ChildPath ${fontName}
+            Write-Verbose "[${fontName}] - Extracting archive to [${extractPath}]…"
+            if (${PSCmdlet}.ShouldProcess("[${fontName}] to [${extractPath}]", 'Extract')) {
+                Expand-Archive -Path ${downloadPath} -DestinationPath ${extractPath} -Force
+                Remove-Item -Path ${downloadPath} -Force
             }
 
-            Write-Verbose "[$fontName] - Install to [$Scope]"
-            if ($PSCmdlet.ShouldProcess("[$fontName] to [$Scope]", 'Install font')) {
-                Install-Font -Path $extractPath -Scope $Scope -Force:$Force
-                Remove-Item -Path $extractPath -Force -Recurse
+            Write-Verbose "[${fontName}] - Installing for [${Scope}]…"
+            if (${PSCmdlet}.ShouldProcess("[${fontName}] to [${Scope}]", 'Install font')) {
+                Install-Font -Path ${extractPath} -Scope ${Scope} -Force:${Force}
+                Remove-Item -Path ${extractPath} -Force -Recurse
             }
         }
     }
 
     end {
-        Write-Verbose "Remove folder [$tempPath]"
+        Write-Verbose "Removing temporary download directory [${tempPath}]…"
     }
 
     clean {
-        Remove-Item -Path $tempPath -Force
+        Remove-Item -Path ${tempPath} -Force
     }
 }
