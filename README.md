@@ -53,6 +53,53 @@ This requires the shell to run in an elevated context (sudo or run as administra
 Install-NerdFont -All -Scope AllUsers
 ```
 
+### Check if a NerdFont is installed
+
+The [Fonts](https://psmodule.io/Fonts) module is installed automatically as a dependency and provides the
+[`Get-Font`](https://psmodule.io/Fonts/Functions/Get-Font/) command for querying installed fonts on the system.
+
+To check if a specific NerdFont is installed for the current user:
+
+```powershell
+Get-Font -Name 'FiraCode*'
+```
+
+To check across all users on the system:
+
+```powershell
+Get-Font -Name 'FiraCode*' -Scope AllUsers
+```
+
+If the command returns results, the font is installed. If it returns nothing, the font is not installed in that scope.
+
+### Update an installed NerdFont
+
+Individual font files do not embed a NerdFonts release version, so there is no direct way to check whether an installed
+NerdFont is outdated. To ensure you have the latest version, reinstall the font using the `-Force` parameter:
+
+```powershell
+Install-NerdFont -Name 'FiraCode' -Force
+```
+
+This downloads and installs the font from the latest NerdFonts release, overwriting any existing version.
+
+### Uninstall a NerdFont
+
+To uninstall a NerdFont, use the [`Uninstall-Font`](https://psmodule.io/Fonts/Functions/Uninstall-Font/) command
+from the [Fonts](https://psmodule.io/Fonts) module (installed automatically as a dependency).
+
+To uninstall a NerdFont from the current user:
+
+```powershell
+Uninstall-Font -Name 'FiraCode*' # Tab completion works on name
+```
+
+To uninstall a NerdFont for all users (requires elevated privileges):
+
+```powershell
+Uninstall-Font -Name 'FiraCode*' -Scope AllUsers
+```
+
 ## Contributing
 
 Coder or not, you can contribute to the project! We welcome all contributions.
