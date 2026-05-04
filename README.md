@@ -75,7 +75,7 @@ If the command returns results, the font is installed. If it returns nothing, th
 ### Update an installed NerdFont
 
 Individual font files do not embed a NerdFonts release version, so there is no direct way to check whether an installed
-NerdFont is outdated. To ensure you have the latest version, reinstall the font using the `-Force` parameter:
+NerdFont is outdated. To ensure you have the version bundled with the module, reinstall the font using the `-Force` parameter:
 
 ```powershell
 Install-NerdFont -Name 'FiraCode' -Force
@@ -87,7 +87,8 @@ If the font was originally installed for all users, update it with the matching 
 Install-NerdFont -Name 'FiraCode' -Force -Scope AllUsers
 ```
 
-This downloads and installs the font from the latest NerdFonts release, overwriting any existing version.
+This re-downloads and installs the font version bundled with your installed NerdFonts module, overwriting any existing
+files. To pick up newer font releases, update the NerdFonts module first (`Update-Module -Name NerdFonts`).
 
 ### Uninstall a NerdFont
 
