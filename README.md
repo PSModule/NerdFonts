@@ -42,6 +42,7 @@ Install-NerdFont -Name 'FiraCode' -Scope AllUsers #Tab completion works on Scope
 To install all NerdFonts on the system you can use the following command.
 
 This will download and install all NerdFonts to the current user.
+
 ```powershell
 Install-NerdFont -All
 ```
