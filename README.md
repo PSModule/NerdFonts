@@ -81,6 +81,12 @@ NerdFont is outdated. To ensure you have the latest version, reinstall the font 
 Install-NerdFont -Name 'FiraCode' -Force
 ```
 
+If the font was originally installed for all users, update it with the matching scope (requires elevated privileges):
+
+```powershell
+Install-NerdFont -Name 'FiraCode' -Force -Scope AllUsers
+```
+
 This downloads and installs the font from the latest NerdFonts release, overwriting any existing version.
 
 ### Uninstall a NerdFont
