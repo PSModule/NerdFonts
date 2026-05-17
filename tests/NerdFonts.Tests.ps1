@@ -40,6 +40,11 @@ Describe 'Module' {
             Get-Font -Name 'Tinos*' | Should -Not -BeNullOrEmpty
         }
 
+        It 'Install-NerdFont - Installs a font with -Variant Mono' {
+            { Install-NerdFont -Name 'Hack' -Variant Mono -Force } | Should -Not -Throw
+            Get-Font -Name 'Hack*' | Should -Not -BeNullOrEmpty
+        }
+
         It 'Install-NerdFont - Installs all fonts' {
             { Install-NerdFont -All -Verbose } | Should -Not -Throw
             Get-Font -Name 'VictorMono*' | Should -Not -BeNullOrEmpty
