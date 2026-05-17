@@ -102,25 +102,37 @@ function Measure-Scenario {
 $results = [System.Collections.Generic.List[object]]::new()
 
 # --- Scenario 1: single small/medium font ---
-$results.Add((Measure-Scenario -Name 'Single-Hack' `
-    -Setup { Invoke-Uninstall -Names 'Hack' } `
-    -Action { Install-NerdFont -Name 'Hack' -Scope CurrentUser -Force }))
+$single = @{
+    Name   = 'Single-Hack'
+    Setup  = { Invoke-Uninstall -Names 'Hack' }
+    Action = { Install-NerdFont -Name 'Hack' -Scope CurrentUser -Force }
+}
+$results.Add((Measure-Scenario @single))
 
 # --- Scenario 2: subset of named fonts ---
-$results.Add((Measure-Scenario -Name "Subset-$($Subset -join '+')" `
-    -Setup { Invoke-Uninstall -Names $Subset } `
-    -Action { Install-NerdFont -Name $Subset -Scope CurrentUser -Force }))
+$subsetArgs = @{
+    Name   = "Subset-$($Subset -join '+')"
+    Setup  = { Invoke-Uninstall -Names $Subset }
+    Action = { Install-NerdFont -Name $Subset -Scope CurrentUser -Force }
+}
+$results.Add((Measure-Scenario @subsetArgs))
 
 # --- Scenario 3: re-install when already present (no-op path) ---
-$results.Add((Measure-Scenario -Name 'Subset-AlreadyInstalled' `
-    -Setup { } `
-    -Action { Install-NerdFont -Name $Subset -Scope CurrentUser }))
+$noop = @{
+    Name   = 'Subset-AlreadyInstalled'
+    Setup  = { }
+    Action = { Install-NerdFont -Name $Subset -Scope CurrentUser }
+}
+$results.Add((Measure-Scenario @noop))
 
 # --- Scenario 4: full -All (only when explicitly requested) ---
 if ($IncludeAll) {
-    $results.Add((Measure-Scenario -Name 'All' `
-        -Setup { Invoke-UninstallAll } `
-        -Action { Install-NerdFont -All -Scope CurrentUser -Force }))
+    $allArgs = @{
+        Name   = 'All'
+        Setup  = { Invoke-UninstallAll }
+        Action = { Install-NerdFont -All -Scope CurrentUser -Force }
+    }
+    $results.Add((Measure-Scenario @allArgs))
 }
 
 Write-Host ""

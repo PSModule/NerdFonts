@@ -106,9 +106,29 @@ Please run the command again with elevated rights (Run as Administrator) or prov
     end {
         Write-Verbose "[$Scope] - Installing [$($nerdFontsToInstall.Count)] fonts"
 
+        $installedFamilies = $null
+        if (-not $Force) {
+            $installedFamilies = [System.Collections.Generic.HashSet[string]]::new(
+                [string[]]((Get-Font -Scope $Scope -ErrorAction SilentlyContinue).Name),
+                [System.StringComparer]::OrdinalIgnoreCase
+            )
+        }
+
         foreach ($nerdFont in $nerdFontsToInstall) {
             $URL = $nerdFont.URL
             $fontName = $nerdFont.Name
+
+            if (-not $Force -and $installedFamilies) {
+                $alreadyInstalled = $false
+                foreach ($family in $installedFamilies) {
+                    if ($family -like "$fontName*") { $alreadyInstalled = $true; break }
+                }
+                if ($alreadyInstalled) {
+                    Write-Verbose "[$fontName] - already installed, skipping"
+                    continue
+                }
+            }
+
             $downloadFileName = Split-Path -Path $URL -Leaf
             $downloadPath = Join-Path -Path $tempPath -ChildPath $downloadFileName
 
