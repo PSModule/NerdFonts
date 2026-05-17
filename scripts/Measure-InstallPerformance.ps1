@@ -147,6 +147,6 @@ if ($IncludeAll) {
     $results.Add((Measure-Scenario @allArgs))
 }
 
-Write-Host ""
+Write-Host ''
 Write-Host "Summary for iteration '$Iteration':" -ForegroundColor Yellow
 $results | Format-Table Iteration, Scenario, DurationS, Module -AutoSize
