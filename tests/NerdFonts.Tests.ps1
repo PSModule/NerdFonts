@@ -45,7 +45,7 @@ Describe 'Module' {
 
             $originalFonts = $script:NerdFonts
             $loadedFonts = Get-Content -Path (Join-Path -Path $PSScriptRoot -ChildPath '..\src\FontsData.json') | ConvertFrom-Json
-            $goodFont = $loadedFonts | Where-Object Name -eq 'Tinos' | Select-Object -First 1
+            $goodFont = $loadedFonts | Where-Object Name -EQ 'Tinos' | Select-Object -First 1
 
             $script:NerdFonts = @(
                 [pscustomobject]@{
@@ -90,6 +90,11 @@ Describe 'Module' {
 
         It 'Install-NerdFont - Installs a font with -Variant Mono' {
             { Install-NerdFont -Name 'Hack' -Variant Mono -Force } | Should -Not -Throw
+            Get-Font -Name 'Hack*' | Should -Not -BeNullOrEmpty
+        }
+
+        It 'Install-NerdFont - Installs a font with -Variant Standard' {
+            { Install-NerdFont -Name 'Hack' -Variant Standard -Force } | Should -Not -Throw
             Get-Font -Name 'Hack*' | Should -Not -BeNullOrEmpty
         }
 
