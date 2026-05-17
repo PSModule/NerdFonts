@@ -149,6 +149,7 @@ Please run the command again with elevated rights (Run as Administrator) or prov
         $httpClient = [System.Net.Http.HttpClient]::new()
         $httpClient.Timeout = [TimeSpan]::FromMinutes(5)
         $pending = [System.Collections.Generic.List[object]]::new()
+        $throttle = 8
 
         try {
             foreach ($nerdFont in $toProcess) {
@@ -170,32 +171,40 @@ Please run the command again with elevated rights (Run as Administrator) or prov
                     Copy-Item -LiteralPath $cachedFile -Destination $downloadPath -Force
                     $pending.Add([pscustomobject]@{
                             Name         = $fontName
+                            URL          = $URL
                             DownloadPath = $downloadPath
                             CachedFile   = $cachedFile
                             CacheTagDir  = $cacheTagDir
-                            Task         = $null
+                            FromCache    = $true
                         })
                 } else {
                     Write-Verbose "[$fontName] - Queue download to [$downloadPath]"
-                    $task = $httpClient.GetByteArrayAsync($URL)
                     $pending.Add([pscustomobject]@{
                             Name         = $fontName
+                            URL          = $URL
                             DownloadPath = $downloadPath
                             CachedFile   = $cachedFile
                             CacheTagDir  = $cacheTagDir
-                            Task         = $task
+                            FromCache    = $false
                         })
                 }
             }
 
-            foreach ($p in $pending) {
-                if ($null -ne $p.Task) {
-                    $bytes = $p.Task.GetAwaiter().GetResult()
-                    [System.IO.File]::WriteAllBytes($p.DownloadPath, $bytes)
-                    if (-not (Test-Path -LiteralPath $p.CacheTagDir)) {
-                        $null = New-Item -ItemType Directory -Path $p.CacheTagDir -Force
+            $toDownload = @($pending | Where-Object { -not $_.FromCache })
+            for ($i = 0; $i -lt $toDownload.Count; $i += $throttle) {
+                $end = [Math]::Min($i + $throttle - 1, $toDownload.Count - 1)
+                $chunk = $toDownload[$i..$end]
+                $tasks = @()
+                foreach ($q in $chunk) {
+                    $tasks += [pscustomobject]@{ Q = $q; Task = $httpClient.GetByteArrayAsync($q.URL) }
+                }
+                foreach ($t in $tasks) {
+                    $bytes = $t.Task.GetAwaiter().GetResult()
+                    [System.IO.File]::WriteAllBytes($t.Q.DownloadPath, $bytes)
+                    if (-not (Test-Path -LiteralPath $t.Q.CacheTagDir)) {
+                        $null = New-Item -ItemType Directory -Path $t.Q.CacheTagDir -Force
                     }
-                    [System.IO.File]::WriteAllBytes($p.CachedFile, $bytes)
+                    [System.IO.File]::WriteAllBytes($t.Q.CachedFile, $bytes)
                 }
             }
         } finally {
