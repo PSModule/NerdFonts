@@ -98,9 +98,28 @@ Describe 'Module' {
             Get-Font -Name 'Hack*' | Should -Not -BeNullOrEmpty
         }
 
-        It 'Install-NerdFont - Installs all fonts' {
-            { Install-NerdFont -All -Verbose } | Should -Not -Throw
-            Get-Font -Name 'VictorMono*' | Should -Not -BeNullOrEmpty
+        It 'Install-NerdFont - Handles -All without downloading already installed fonts' {
+            . (Join-Path -Path $PSScriptRoot -ChildPath '..\src\functions\public\Install-NerdFont.ps1')
+
+            $originalFonts = $script:NerdFonts
+            $script:NerdFonts = @(
+                [pscustomobject]@{
+                    Name = 'AllPathSmokeTest'
+                    URL  = 'https://example.invalid/all-path-smoke.zip'
+                }
+            )
+
+            try {
+                Mock Get-Font {
+                    [pscustomobject]@{ Name = 'AllPathSmokeTest Nerd Font' }
+                }
+                Mock Install-Font {}
+
+                { Install-NerdFont -All -Verbose -ErrorAction Stop } | Should -Not -Throw
+                Should -Invoke Install-Font -Times 0 -Exactly
+            } finally {
+                $script:NerdFonts = $originalFonts
+            }
         }
     }
 }

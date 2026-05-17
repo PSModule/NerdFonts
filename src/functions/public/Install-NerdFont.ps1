@@ -276,6 +276,8 @@ Please run the command again with elevated rights (Run as Administrator) or prov
     }
 
     clean {
-        Remove-Item -Path $tempPath -Force
+        if ($tempPath -and (Test-Path -LiteralPath $tempPath)) {
+            Remove-Item -LiteralPath $tempPath -Force -Recurse -ErrorAction SilentlyContinue
+        }
     }
 }
