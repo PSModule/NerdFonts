@@ -150,7 +150,7 @@ Please run the command again with elevated rights (Run as Administrator) or prov
         $httpClient.Timeout = [TimeSpan]::FromMinutes(5)
         $pending = [System.Collections.Generic.List[object]]::new()
         $readyToInstall = [System.Collections.Generic.List[object]]::new()
-        $throttle = 8
+        $throttle = [Math]::Max(1, [Environment]::ProcessorCount)
 
         try {
             foreach ($nerdFont in $toProcess) {
