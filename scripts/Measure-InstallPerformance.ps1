@@ -15,6 +15,14 @@
         Per-iteration result JSON is appended to scripts/perf-results.jsonl
         so a full report can be produced at the end of the improvement cycle.
 #>
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute(
+    'PSAvoidUsingWriteHost', '',
+    Justification = 'Console output for an interactive perf script.'
+)]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute(
+    'PSReviewUnusedParameter', 'ResultsPath',
+    Justification = 'Used inside Measure-Scenario via closure on the enclosing scope.'
+)]
 [CmdletBinding()]
 param(
     # Free-form label for the iteration (module version, commit short SHA, etc).

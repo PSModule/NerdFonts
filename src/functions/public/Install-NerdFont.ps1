@@ -76,7 +76,8 @@ Please run the command again with elevated rights (Run as Administrator) or prov
 '@
             throw $errorMessage
         }
-        $nerdFontsToInstall = @()
+        $nerdFontsToInstall = [System.Collections.Generic.List[object]]::new()
+        $seenNames = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
 
         $guid = (New-Guid).Guid
         $tempPath = Join-Path -Path $HOME -ChildPath "NerdFonts-$guid"
@@ -88,14 +89,22 @@ Please run the command again with elevated rights (Run as Administrator) or prov
 
     process {
         if ($All) {
-            $nerdFontsToInstall = $script:NerdFonts
+            foreach ($font in $script:NerdFonts) {
+                if ($seenNames.Add($font.Name)) { $nerdFontsToInstall.Add($font) }
+            }
         } else {
             foreach ($fontName in $Name) {
-                $nerdFontsToInstall += $script:NerdFonts | Where-Object { $_.Name -like $fontName }
+                foreach ($font in $script:NerdFonts) {
+                    if ($font.Name -like $fontName -and $seenNames.Add($font.Name)) {
+                        $nerdFontsToInstall.Add($font)
+                    }
+                }
             }
         }
+    }
 
-        Write-Verbose "[$Scope] - Installing [$($nerdFontsToInstall.count)] fonts"
+    end {
+        Write-Verbose "[$Scope] - Installing [$($nerdFontsToInstall.Count)] fonts"
 
         foreach ($nerdFont in $nerdFontsToInstall) {
             $URL = $nerdFont.URL
@@ -127,9 +136,7 @@ Please run the command again with elevated rights (Run as Administrator) or prov
                 Remove-Item -Path $extractPath -Force -Recurse
             }
         }
-    }
 
-    end {
         Write-Verbose "Remove folder [$tempPath]"
     }
 
