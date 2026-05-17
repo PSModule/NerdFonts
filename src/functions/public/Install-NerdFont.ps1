@@ -106,6 +106,15 @@ Please run the command again with elevated rights (Run as Administrator) or prov
     end {
         Write-Verbose "[$Scope] - Installing [$($nerdFontsToInstall.Count)] fonts"
 
+        $cacheRoot = if ($IsWindows) {
+            Join-Path -Path ([Environment]::GetFolderPath('LocalApplicationData')) -ChildPath 'PSModule/NerdFonts/cache'
+        } else {
+            Join-Path -Path $HOME -ChildPath '.cache/PSModule/NerdFonts'
+        }
+        if (-not (Test-Path -LiteralPath $cacheRoot)) {
+            $null = New-Item -ItemType Directory -Path $cacheRoot -Force
+        }
+
         $installedFamilies = $null
         if (-not $Force) {
             $installedNames = @(Get-Font -Scope $Scope -ErrorAction SilentlyContinue | ForEach-Object { $_.Name } | Where-Object { $_ })
@@ -133,15 +142,28 @@ Please run the command again with elevated rights (Run as Administrator) or prov
             $downloadFileName = Split-Path -Path $URL -Leaf
             $downloadPath = Join-Path -Path $tempPath -ChildPath $downloadFileName
 
-            Write-Verbose "[$fontName] - Downloading to [$downloadPath]"
-            if ($PSCmdlet.ShouldProcess("[$fontName] to [$downloadPath]", 'Download')) {
-                $previousProgress = $ProgressPreference
-                $ProgressPreference = 'SilentlyContinue'
-                try {
-                    Invoke-WebRequest -Uri $URL -OutFile $downloadPath -RetryIntervalSec 5 -MaximumRetryCount 5
-                } finally {
-                    $ProgressPreference = $previousProgress
+            $cacheTag = if ($URL -match '/releases/download/([^/]+)/') { $Matches[1] } else { 'unknown' }
+            $cacheTagDir = Join-Path -Path $cacheRoot -ChildPath $cacheTag
+            $cachedFile = Join-Path -Path $cacheTagDir -ChildPath $downloadFileName
+
+            if ((Test-Path -LiteralPath $cachedFile) -and -not $Force) {
+                Write-Verbose "[$fontName] - Cache hit at [$cachedFile]"
+                Copy-Item -LiteralPath $cachedFile -Destination $downloadPath -Force
+            } else {
+                Write-Verbose "[$fontName] - Downloading to [$downloadPath]"
+                if ($PSCmdlet.ShouldProcess("[$fontName] to [$downloadPath]", 'Download')) {
+                    $previousProgress = $ProgressPreference
+                    $ProgressPreference = 'SilentlyContinue'
+                    try {
+                        Invoke-WebRequest -Uri $URL -OutFile $downloadPath -RetryIntervalSec 5 -MaximumRetryCount 5
+                    } finally {
+                        $ProgressPreference = $previousProgress
+                    }
                 }
+                if (-not (Test-Path -LiteralPath $cacheTagDir)) {
+                    $null = New-Item -ItemType Directory -Path $cacheTagDir -Force
+                }
+                Copy-Item -LiteralPath $downloadPath -Destination $cachedFile -Force -ErrorAction SilentlyContinue
             }
 
             $extractPath = Join-Path -Path $tempPath -ChildPath $fontName
