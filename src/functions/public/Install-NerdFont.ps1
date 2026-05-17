@@ -105,7 +105,13 @@ Please run the command again with elevated rights (Run as Administrator) or prov
 
             Write-Verbose "[$fontName] - Downloading to [$downloadPath]"
             if ($PSCmdlet.ShouldProcess("[$fontName] to [$downloadPath]", 'Download')) {
-                Invoke-WebRequest -Uri $URL -OutFile $downloadPath -RetryIntervalSec 5 -MaximumRetryCount 5
+                $previousProgress = $ProgressPreference
+                $ProgressPreference = 'SilentlyContinue'
+                try {
+                    Invoke-WebRequest -Uri $URL -OutFile $downloadPath -RetryIntervalSec 5 -MaximumRetryCount 5
+                } finally {
+                    $ProgressPreference = $previousProgress
+                }
             }
 
             $extractPath = Join-Path -Path $tempPath -ChildPath $fontName
