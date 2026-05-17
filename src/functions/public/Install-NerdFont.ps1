@@ -171,25 +171,25 @@ Please run the command again with elevated rights (Run as Administrator) or prov
                     Write-Verbose "[$fontName] - Cache hit at [$cachedFile]"
                     Copy-Item -LiteralPath $cachedFile -Destination $downloadPath -Force
                     $item = [pscustomobject]@{
-                            Name         = $fontName
-                            URL          = $URL
-                            DownloadPath = $downloadPath
-                            CachedFile   = $cachedFile
-                            CacheTagDir  = $cacheTagDir
-                            FromCache    = $true
-                        }
+                        Name         = $fontName
+                        URL          = $URL
+                        DownloadPath = $downloadPath
+                        CachedFile   = $cachedFile
+                        CacheTagDir  = $cacheTagDir
+                        FromCache    = $true
+                    }
                     $pending.Add($item)
                     $readyToInstall.Add($item)
                 } else {
                     Write-Verbose "[$fontName] - Queue download to [$downloadPath]"
                     $pending.Add([pscustomobject]@{
-                            Name         = $fontName
-                            URL          = $URL
-                            DownloadPath = $downloadPath
-                            CachedFile   = $cachedFile
-                            CacheTagDir  = $cacheTagDir
-                            FromCache    = $false
-                        })
+                        Name         = $fontName
+                        URL          = $URL
+                        DownloadPath = $downloadPath
+                        CachedFile   = $cachedFile
+                        CacheTagDir  = $cacheTagDir
+                        FromCache    = $false
+                    })
                 }
             }
 
