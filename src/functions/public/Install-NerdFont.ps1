@@ -108,8 +108,9 @@ Please run the command again with elevated rights (Run as Administrator) or prov
 
         $installedFamilies = $null
         if (-not $Force) {
+            $installedNames = @(Get-Font -Scope $Scope -ErrorAction SilentlyContinue | ForEach-Object { $_.Name } | Where-Object { $_ })
             $installedFamilies = [System.Collections.Generic.HashSet[string]]::new(
-                [string[]]((Get-Font -Scope $Scope -ErrorAction SilentlyContinue).Name),
+                [string[]]$installedNames,
                 [System.StringComparer]::OrdinalIgnoreCase
             )
         }
