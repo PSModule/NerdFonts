@@ -184,11 +184,25 @@ Please run the command again with elevated rights (Run as Administrator) or prov
             if ($Variant -ne 'All') {
                 $allFiles = Get-ChildItem -Path $extractPath -Recurse -File -Include '*.ttf', '*.otf'
                 $keep = switch ($Variant) {
-                    'Mono'     { $allFiles | Where-Object { $_.Name -like '*NerdFontMono*' } }
-                    'Propo'    { $allFiles | Where-Object { $_.Name -like '*NerdFontPropo*' } }
-                    'Standard' { $allFiles | Where-Object { $_.Name -like '*NerdFont*' -and $_.Name -notlike '*NerdFontMono*' -and $_.Name -notlike '*NerdFontPropo*' } }
+                    'Mono' {
+                        $allFiles | Where-Object { $_.Name -like '*NerdFontMono*' }
+                    }
+                    'Propo' {
+                        $allFiles | Where-Object { $_.Name -like '*NerdFontPropo*' }
+                    }
+                    'Standard' {
+                        $allFiles | Where-Object {
+                            $_.Name -like '*NerdFont*' -and
+                            $_.Name -notlike '*NerdFontMono*' -and
+                            $_.Name -notlike '*NerdFontPropo*'
+                        }
+                    }
                 }
-                $keepSet = [System.Collections.Generic.HashSet[string]]::new([string[]]@($keep.FullName), [System.StringComparer]::OrdinalIgnoreCase)
+                $keepNames = [string[]]@($keep.FullName)
+                $keepSet = [System.Collections.Generic.HashSet[string]]::new(
+                    $keepNames,
+                    [System.StringComparer]::OrdinalIgnoreCase
+                )
                 $removed = 0
                 foreach ($f in $allFiles) {
                     if (-not $keepSet.Contains($f.FullName)) {
@@ -196,7 +210,7 @@ Please run the command again with elevated rights (Run as Administrator) or prov
                         $removed++
                     }
                 }
-                Write-Verbose "[$fontName] - Variant '$Variant' filter kept $($keep.Count) files, removed $removed"
+                Write-Verbose "[$fontName] - Variant '$Variant' kept $($keep.Count) files, removed $removed"
             }
 
             Write-Verbose "[$fontName] - Install to [$Scope]"
