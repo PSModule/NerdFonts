@@ -68,11 +68,6 @@ function Install-NerdFont {
         [ValidateSet('All', 'Standard', 'Mono', 'Propo')]
         [string] $Variant = 'All',
 
-        # Max concurrent downloads.
-        [Parameter()]
-        [ValidateRange(1, 32)]
-        [int] $ThrottleLimit = 8,
-
         # Force will overwrite existing fonts
         [Parameter()]
         [switch] $Force
@@ -150,48 +145,75 @@ Please run the command again with elevated rights (Run as Administrator) or prov
             $toProcess.Add($nerdFont)
         }
 
-        $extracted = $toProcess | ForEach-Object -ThrottleLimit $ThrottleLimit -Parallel {
-            $nerdFont = $_
-            $tempPath = $using:tempPath
-            $cacheRoot = $using:cacheRoot
-            $Variant = $using:Variant
-            $Force = $using:Force
+        Add-Type -AssemblyName System.Net.Http -ErrorAction SilentlyContinue
+        $httpClient = [System.Net.Http.HttpClient]::new()
+        $httpClient.Timeout = [TimeSpan]::FromMinutes(5)
+        $pending = [System.Collections.Generic.List[object]]::new()
 
-            $URL = $nerdFont.URL
-            $fontName = $nerdFont.Name
-            $downloadFileName = Split-Path -Path $URL -Leaf
-            $downloadPath = Join-Path -Path $tempPath -ChildPath $downloadFileName
-            $cacheTag = if ($URL -match '/releases/download/([^/]+)/') {
-                $Matches[1]
-            } else {
-                'unknown'
-            }
-            $cacheTagDir = Join-Path -Path $cacheRoot -ChildPath $cacheTag
-            $cachedFile = Join-Path -Path $cacheTagDir -ChildPath $downloadFileName
+        try {
+            foreach ($nerdFont in $toProcess) {
+                $URL = $nerdFont.URL
+                $fontName = $nerdFont.Name
+                $downloadFileName = Split-Path -Path $URL -Leaf
+                $downloadPath = Join-Path -Path $tempPath -ChildPath $downloadFileName
 
-            if ((Test-Path -LiteralPath $cachedFile) -and -not $Force) {
-                Copy-Item -LiteralPath $cachedFile -Destination $downloadPath -Force
-            } else {
-                $previousProgress = $ProgressPreference
-                $ProgressPreference = 'SilentlyContinue'
-                try {
-                    Invoke-WebRequest -Uri $URL -OutFile $downloadPath -RetryIntervalSec 5 -MaximumRetryCount 5
-                } finally {
-                    $ProgressPreference = $previousProgress
+                $cacheTag = if ($URL -match '/releases/download/([^/]+)/') {
+                    $Matches[1]
+                } else {
+                    'unknown'
                 }
-                if (-not (Test-Path -LiteralPath $cacheTagDir)) {
-                    $null = New-Item -ItemType Directory -Path $cacheTagDir -Force
+                $cacheTagDir = Join-Path -Path $cacheRoot -ChildPath $cacheTag
+                $cachedFile = Join-Path -Path $cacheTagDir -ChildPath $downloadFileName
+
+                if ((Test-Path -LiteralPath $cachedFile) -and -not $Force) {
+                    Write-Verbose "[$fontName] - Cache hit at [$cachedFile]"
+                    Copy-Item -LiteralPath $cachedFile -Destination $downloadPath -Force
+                    $pending.Add([pscustomobject]@{
+                            Name         = $fontName
+                            DownloadPath = $downloadPath
+                            CachedFile   = $cachedFile
+                            CacheTagDir  = $cacheTagDir
+                            Task         = $null
+                        })
+                } else {
+                    Write-Verbose "[$fontName] - Queue download to [$downloadPath]"
+                    $task = $httpClient.GetByteArrayAsync($URL)
+                    $pending.Add([pscustomobject]@{
+                            Name         = $fontName
+                            DownloadPath = $downloadPath
+                            CachedFile   = $cachedFile
+                            CacheTagDir  = $cacheTagDir
+                            Task         = $task
+                        })
                 }
-                Copy-Item -LiteralPath $downloadPath -Destination $cachedFile -Force -ErrorAction SilentlyContinue
             }
 
+            foreach ($p in $pending) {
+                if ($null -ne $p.Task) {
+                    $bytes = $p.Task.GetAwaiter().GetResult()
+                    [System.IO.File]::WriteAllBytes($p.DownloadPath, $bytes)
+                    if (-not (Test-Path -LiteralPath $p.CacheTagDir)) {
+                        $null = New-Item -ItemType Directory -Path $p.CacheTagDir -Force
+                    }
+                    [System.IO.File]::WriteAllBytes($p.CachedFile, $bytes)
+                }
+            }
+        } finally {
+            $httpClient.Dispose()
+        }
+
+        foreach ($p in $pending) {
+            $fontName = $p.Name
+            $downloadPath = $p.DownloadPath
             $extractPath = Join-Path -Path $tempPath -ChildPath $fontName
-            if (-not (Test-Path -LiteralPath $extractPath)) {
-                $null = New-Item -ItemType Directory -Path $extractPath
+            Write-Verbose "[$fontName] - Extract to [$extractPath]"
+            if ($PSCmdlet.ShouldProcess("[$fontName] to [$extractPath]", 'Extract')) {
+                if (-not (Test-Path -LiteralPath $extractPath)) {
+                    $null = New-Item -ItemType Directory -Path $extractPath
+                }
+                [System.IO.Compression.ZipFile]::ExtractToDirectory($downloadPath, $extractPath, $true)
+                Remove-Item -Path $downloadPath -Force
             }
-            Add-Type -AssemblyName System.IO.Compression.FileSystem -ErrorAction SilentlyContinue
-            [System.IO.Compression.ZipFile]::ExtractToDirectory($downloadPath, $extractPath, $true)
-            Remove-Item -Path $downloadPath -Force
 
             if ($Variant -ne 'All') {
                 $allFiles = Get-ChildItem -Path $extractPath -Recurse -File -Include '*.ttf', '*.otf'
@@ -215,21 +237,20 @@ Please run the command again with elevated rights (Run as Administrator) or prov
                     $keepNames,
                     [System.StringComparer]::OrdinalIgnoreCase
                 )
+                $removed = 0
                 foreach ($f in $allFiles) {
                     if (-not $keepSet.Contains($f.FullName)) {
                         Remove-Item -LiteralPath $f.FullName -Force -ErrorAction SilentlyContinue
+                        $removed++
                     }
                 }
+                Write-Verbose "[$fontName] - Variant '$Variant' kept $($keep.Count) files, removed $removed"
             }
 
-            [pscustomobject]@{ Name = $fontName; ExtractPath = $extractPath }
-        }
-
-        foreach ($e in $extracted) {
-            Write-Verbose "[$($e.Name)] - Install to [$Scope]"
-            if ($PSCmdlet.ShouldProcess("[$($e.Name)] to [$Scope]", 'Install font')) {
-                Install-Font -Path $e.ExtractPath -Scope $Scope -Force:$Force
-                Remove-Item -Path $e.ExtractPath -Force -Recurse
+            Write-Verbose "[$fontName] - Install to [$Scope]"
+            if ($PSCmdlet.ShouldProcess("[$fontName] to [$Scope]", 'Install font')) {
+                Install-Font -Path $extractPath -Scope $Scope -Force:$Force
+                Remove-Item -Path $extractPath -Force -Recurse
             }
         }
 
