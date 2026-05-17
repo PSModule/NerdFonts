@@ -89,7 +89,8 @@ Install-NerdFont -Name 'FiraCode' -Force -Scope AllUsers
 ```
 
 This re-downloads and installs the font version bundled with your installed NerdFonts module, overwriting any existing
-files. To pick up newer font releases, update the NerdFonts module first (`Update-Module -Name NerdFonts`).
+files. To pick up newer font releases, update the NerdFonts module first (`Update-PSResource -Name NerdFonts` if you
+installed via PSResourceGet, or `Update-Module -Name NerdFonts` if you installed via PowerShellGet).
 
 ### Uninstall a NerdFont
 
