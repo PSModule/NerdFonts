@@ -182,14 +182,15 @@ Please run the command again with elevated rights (Run as Administrator) or prov
                     $readyToInstall.Add($item)
                 } else {
                     Write-Verbose "[$fontName] - Queue download to [$downloadPath]"
-                    $pending.Add([pscustomobject]@{
+                    $item = [pscustomobject]@{
                         Name         = $fontName
                         URL          = $URL
                         DownloadPath = $downloadPath
                         CachedFile   = $cachedFile
                         CacheTagDir  = $cacheTagDir
                         FromCache    = $false
-                    })
+                    }
+                    $pending.Add($item)
                 }
             }
 
