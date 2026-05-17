@@ -147,7 +147,10 @@ Please run the command again with elevated rights (Run as Administrator) or prov
             $extractPath = Join-Path -Path $tempPath -ChildPath $fontName
             Write-Verbose "[$fontName] - Extract to [$extractPath]"
             if ($PSCmdlet.ShouldProcess("[$fontName] to [$extractPath]", 'Extract')) {
-                Expand-Archive -Path $downloadPath -DestinationPath $extractPath -Force
+                if (-not (Test-Path -LiteralPath $extractPath)) {
+                    $null = New-Item -ItemType Directory -Path $extractPath
+                }
+                [System.IO.Compression.ZipFile]::ExtractToDirectory($downloadPath, $extractPath, $true)
                 Remove-Item -Path $downloadPath -Force
             }
 
