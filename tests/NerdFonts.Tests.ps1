@@ -64,6 +64,30 @@ Describe 'Module' {
             }
         }
 
+        It 'Install-NerdFont - Skips already installed fonts without downloading' {
+            . (Join-Path -Path $PSScriptRoot -ChildPath '..\src\functions\public\Install-NerdFont.ps1')
+
+            $originalFonts = $script:NerdFonts
+            $script:NerdFonts = @(
+                [pscustomobject]@{
+                    Name = 'AlreadyInstalledTest'
+                    URL  = 'https://example.invalid/already-installed.zip'
+                }
+            )
+
+            try {
+                Mock Get-Font {
+                    [pscustomobject]@{ Name = 'AlreadyInstalledTest Nerd Font' }
+                }
+                Mock Install-Font {}
+
+                { Install-NerdFont -Name 'AlreadyInstalledTest' -ErrorAction Stop } | Should -Not -Throw
+                Should -Invoke Install-Font -Times 0 -Exactly
+            } finally {
+                $script:NerdFonts = $originalFonts
+            }
+        }
+
         It 'Install-NerdFont - Installs a font with -Variant Mono' {
             { Install-NerdFont -Name 'Hack' -Variant Mono -Force } | Should -Not -Throw
             Get-Font -Name 'Hack*' | Should -Not -BeNullOrEmpty
