@@ -46,6 +46,10 @@ param(
 $ErrorActionPreference = 'Stop'
 
 function Invoke-Uninstall {
+    <#
+        .SYNOPSIS
+            Removes matching Nerd Font families for the current user.
+    #>
     param([string[]]$Names)
     foreach ($n in $Names) {
         # Nerd Fonts archives expand to multiple family names that all start
@@ -62,11 +66,19 @@ function Invoke-Uninstall {
 }
 
 function Invoke-UninstallAll {
+    <#
+        .SYNOPSIS
+            Removes all Nerd Fonts known to the current module.
+    #>
     $names = (Get-NerdFont).Name
     Invoke-Uninstall -Names $names
 }
 
 function Measure-Scenario {
+    <#
+        .SYNOPSIS
+            Runs one setup/action performance scenario and records the result.
+    #>
     param(
         [string]$Name,
         [scriptblock]$Setup,

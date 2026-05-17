@@ -40,6 +40,30 @@ Describe 'Module' {
             Get-Font -Name 'Tinos*' | Should -Not -BeNullOrEmpty
         }
 
+        It 'Install-NerdFont - Continues when one queued download fails' {
+            . (Join-Path -Path $PSScriptRoot -ChildPath '..\src\functions\public\Install-NerdFont.ps1')
+
+            $originalFonts = $script:NerdFonts
+            $loadedFonts = Get-Content -Path (Join-Path -Path $PSScriptRoot -ChildPath '..\src\FontsData.json') | ConvertFrom-Json
+            $goodFont = $loadedFonts | Where-Object Name -eq 'Tinos' | Select-Object -First 1
+
+            $script:NerdFonts = @(
+                [pscustomobject]@{
+                    Name = 'BrokenDownloadTest'
+                    URL  = 'https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/does-not-exist.zip'
+                },
+                $goodFont
+            )
+
+            try {
+                Mock Install-Font {}
+                { Install-NerdFont -Name @('BrokenDownloadTest', 'Tinos') -Force -ErrorAction SilentlyContinue } | Should -Not -Throw
+                Should -Invoke Install-Font -Times 1 -Exactly
+            } finally {
+                $script:NerdFonts = $originalFonts
+            }
+        }
+
         It 'Install-NerdFont - Installs a font with -Variant Mono' {
             { Install-NerdFont -Name 'Hack' -Variant Mono -Force } | Should -Not -Throw
             Get-Font -Name 'Hack*' | Should -Not -BeNullOrEmpty

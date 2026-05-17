@@ -85,7 +85,7 @@ Get-Font -Name 'FiraCode*' -Scope AllUsers
 
 If the command returns results, the font is installed. If it returns nothing, the font is not installed in that scope.
 
-When you run `Install-NerdFont` again without `-Force`, fonts that are already installed in the requested scope are skipped. Downloaded archives are also cached per Nerd Fonts release so retries and repeated installs do not need to fetch the same zip again.
+When you run `Install-NerdFont` again without `-Force`, fonts that are already installed in the requested scope are skipped. Downloaded archives are also cached per Nerd Fonts release so retries and repeated installs do not need to fetch the same ZIP again.
 
 ### Update an installed NerdFont
 
@@ -103,7 +103,7 @@ Install-NerdFont -Name 'FiraCode' -Force -Scope AllUsers
 ```
 
 This re-downloads and installs the font version bundled with your installed NerdFonts module, overwriting any existing
-files. `-Force` also bypasses the local archive cache so the font zip is fetched again before reinstalling. To pick up newer font releases, update the NerdFonts module first (`Update-PSResource -Name NerdFonts` if you
+files. `-Force` also bypasses the local archive cache so the font ZIP is fetched again before reinstalling. To pick up newer font releases, update the NerdFonts module first (`Update-PSResource -Name NerdFonts` if you
 installed via PSResourceGet, or `Update-Module -Name NerdFonts` if you installed via PowerShellGet).
 
 ### Uninstall a NerdFont

@@ -149,6 +149,7 @@ Please run the command again with elevated rights (Run as Administrator) or prov
         $httpClient = [System.Net.Http.HttpClient]::new()
         $httpClient.Timeout = [TimeSpan]::FromMinutes(5)
         $pending = [System.Collections.Generic.List[object]]::new()
+        $readyToInstall = [System.Collections.Generic.List[object]]::new()
         $throttle = 8
 
         try {
@@ -169,14 +170,16 @@ Please run the command again with elevated rights (Run as Administrator) or prov
                 if ((Test-Path -LiteralPath $cachedFile) -and -not $Force) {
                     Write-Verbose "[$fontName] - Cache hit at [$cachedFile]"
                     Copy-Item -LiteralPath $cachedFile -Destination $downloadPath -Force
-                    $pending.Add([pscustomobject]@{
+                    $item = [pscustomobject]@{
                             Name         = $fontName
                             URL          = $URL
                             DownloadPath = $downloadPath
                             CachedFile   = $cachedFile
                             CacheTagDir  = $cacheTagDir
                             FromCache    = $true
-                        })
+                        }
+                    $pending.Add($item)
+                    $readyToInstall.Add($item)
                 } else {
                     Write-Verbose "[$fontName] - Queue download to [$downloadPath]"
                     $pending.Add([pscustomobject]@{
@@ -199,19 +202,24 @@ Please run the command again with elevated rights (Run as Administrator) or prov
                     $tasks += [pscustomobject]@{ Q = $q; Task = $httpClient.GetByteArrayAsync($q.URL) }
                 }
                 foreach ($t in $tasks) {
-                    $bytes = $t.Task.GetAwaiter().GetResult()
-                    [System.IO.File]::WriteAllBytes($t.Q.DownloadPath, $bytes)
-                    if (-not (Test-Path -LiteralPath $t.Q.CacheTagDir)) {
-                        $null = New-Item -ItemType Directory -Path $t.Q.CacheTagDir -Force
+                    try {
+                        $bytes = $t.Task.GetAwaiter().GetResult()
+                        [System.IO.File]::WriteAllBytes($t.Q.DownloadPath, $bytes)
+                        if (-not (Test-Path -LiteralPath $t.Q.CacheTagDir)) {
+                            $null = New-Item -ItemType Directory -Path $t.Q.CacheTagDir -Force
+                        }
+                        [System.IO.File]::WriteAllBytes($t.Q.CachedFile, $bytes)
+                        $readyToInstall.Add($t.Q)
+                    } catch {
+                        Write-Error "[$($t.Q.Name)] - Download failed: $($_.Exception.Message)"
                     }
-                    [System.IO.File]::WriteAllBytes($t.Q.CachedFile, $bytes)
                 }
             }
         } finally {
             $httpClient.Dispose()
         }
 
-        foreach ($p in $pending) {
+        foreach ($p in $readyToInstall) {
             $fontName = $p.Name
             $downloadPath = $p.DownloadPath
             $extractPath = Join-Path -Path $tempPath -ChildPath $fontName
