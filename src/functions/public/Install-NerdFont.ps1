@@ -79,7 +79,7 @@ Please run the command again with elevated rights (Run as Administrator) or prov
         $nerdFontsToInstall = @()
 
         $guid = (New-Guid).Guid
-        $tempPath = Join-Path -Path $HOME -ChildPath "NerdFonts-$guid"
+        $tempPath = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath "NerdFonts-$guid"
         if (-not (Test-Path -Path $tempPath -PathType Container)) {
             Write-Verbose "Create folder [$tempPath]"
             $null = New-Item -Path $tempPath -ItemType Directory
