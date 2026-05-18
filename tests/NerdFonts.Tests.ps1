@@ -90,12 +90,22 @@ Describe 'Module' {
 
         It 'Install-NerdFont - Installs a font with -Variant Mono' {
             { Install-NerdFont -Name 'Hack' -Variant Mono -Force } | Should -Not -Throw
-            Get-Font -Name 'Hack*' | Should -Not -BeNullOrEmpty
+            $fonts = Get-Font -Name 'Hack Nerd Font*'
+            $fonts | Should -Not -BeNullOrEmpty
+            $mono = $fonts | Where-Object { $_.Name -like '*Mono*' }
+            $mono | Should -Not -BeNullOrEmpty
         }
 
         It 'Install-NerdFont - Installs a font with -Variant Standard' {
             { Install-NerdFont -Name 'Hack' -Variant Standard -Force } | Should -Not -Throw
-            Get-Font -Name 'Hack*' | Should -Not -BeNullOrEmpty
+            $fonts = Get-Font -Name 'Hack Nerd Font*'
+            $fonts | Should -Not -BeNullOrEmpty
+            $standard = $fonts | Where-Object {
+                $_.Name -like 'Hack Nerd Font*' -and
+                $_.Name -notlike '*Mono*' -and
+                $_.Name -notlike '*Propo*'
+            }
+            $standard | Should -Not -BeNullOrEmpty
         }
 
         It 'Install-NerdFont - Handles -All without downloading already installed fonts' {

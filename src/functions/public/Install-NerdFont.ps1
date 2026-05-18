@@ -170,17 +170,35 @@ Please run the command again with elevated rights (Run as Administrator) or prov
 
                 if ((Test-Path -LiteralPath $cachedFile) -and -not $Force) {
                     Write-Verbose "[$fontName] - Cache hit at [$cachedFile]"
-                    Copy-Item -LiteralPath $cachedFile -Destination $downloadPath -Force
-                    $item = [pscustomobject]@{
-                        Name         = $fontName
-                        URL          = $URL
-                        DownloadPath = $downloadPath
-                        CachedFile   = $cachedFile
-                        CacheTagDir  = $cacheTagDir
-                        FromCache    = $true
+                    $cacheHitSuccess = $false
+                    try {
+                        Copy-Item -LiteralPath $cachedFile -Destination $downloadPath -Force -ErrorAction Stop
+                        $cacheHitSuccess = $true
+                    } catch {
+                        Write-Warning "[$fontName] - Cache read failed, falling back to download: $($_.Exception.Message)"
                     }
-                    $pending.Add($item)
-                    $readyToInstall.Add($item)
+                    if ($cacheHitSuccess) {
+                        $item = [pscustomobject]@{
+                            Name         = $fontName
+                            URL          = $URL
+                            DownloadPath = $downloadPath
+                            CachedFile   = $cachedFile
+                            CacheTagDir  = $cacheTagDir
+                            FromCache    = $true
+                        }
+                        $pending.Add($item)
+                        $readyToInstall.Add($item)
+                    } else {
+                        $item = [pscustomobject]@{
+                            Name         = $fontName
+                            URL          = $URL
+                            DownloadPath = $downloadPath
+                            CachedFile   = $cachedFile
+                            CacheTagDir  = $cacheTagDir
+                            FromCache    = $false
+                        }
+                        $pending.Add($item)
+                    }
                 } else {
                     Write-Verbose "[$fontName] - Queue download to [$downloadPath]"
                     $item = [pscustomobject]@{
@@ -233,9 +251,14 @@ Please run the command again with elevated rights (Run as Administrator) or prov
                         if (-not (Test-Path -LiteralPath $p.CacheTagDir)) {
                             $null = New-Item -ItemType Directory -Path $p.CacheTagDir -Force
                         }
-                        Copy-Item -LiteralPath $downloadPath -Destination $p.CachedFile -Force
+                        $tempCachePath = "$($p.CachedFile).tmp"
+                        Copy-Item -LiteralPath $downloadPath -Destination $tempCachePath -Force
+                        Move-Item -LiteralPath $tempCachePath -Destination $p.CachedFile -Force
                     } catch {
                         Write-Warning "[$fontName] - Download succeeded but cache write failed: $($_.Exception.Message)"
+                        if (Test-Path -LiteralPath "$($p.CachedFile).tmp") {
+                            Remove-Item -LiteralPath "$($p.CachedFile).tmp" -Force -ErrorAction SilentlyContinue
+                        }
                     }
                 }
 
