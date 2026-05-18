@@ -135,7 +135,7 @@ Please run the command again with elevated rights (Run as Administrator) or prov
             if (-not $Force -and $installedFamilies) {
                 $alreadyInstalled = $false
                 foreach ($family in $installedFamilies) {
-                    if ($family -like "$fontName*") { $alreadyInstalled = $true; break }
+                    if ($family -like "$fontName Nerd Font*") { $alreadyInstalled = $true; break }
                 }
                 if ($alreadyInstalled) {
                     Write-Verbose "[$fontName] - already installed, skipping"
@@ -151,7 +151,7 @@ Please run the command again with elevated rights (Run as Administrator) or prov
         $httpClient.Timeout = [System.Threading.Timeout]::InfiniteTimeSpan
         $pending = [System.Collections.Generic.List[object]]::new()
         $readyToInstall = [System.Collections.Generic.List[object]]::new()
-        $throttle = [Math]::Max(1, [Environment]::ProcessorCount)
+        $throttle = 8
 
         try {
             foreach ($nerdFont in $toProcess) {

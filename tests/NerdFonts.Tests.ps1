@@ -132,7 +132,7 @@ Describe 'Module' {
             } else {
                 Join-Path -Path $HOME -ChildPath '.cache/PSModule/NerdFonts'
             }
-            $cacheTagDir = Join-Path -Path $cacheRoot -ChildPath 'v3.4.0'
+            $cacheTagDir = Join-Path -Path $cacheRoot -ChildPath 'test-dedup-v0'
             $zipPath = Join-Path -Path $cacheTagDir -ChildPath 'DuplicateMonoTest.zip'
 
             try {
@@ -159,7 +159,7 @@ Describe 'Module' {
                 $script:NerdFonts = @(
                     [pscustomobject]@{
                         Name = $fontName
-                        URL  = 'https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/DuplicateMonoTest.zip'
+                        URL  = 'https://github.com/ryanoasis/nerd-fonts/releases/download/test-dedup-v0/DuplicateMonoTest.zip'
                     }
                 )
 
@@ -177,8 +177,8 @@ Describe 'Module' {
                 $script:InstalledFontFiles.Count | Should -Be 1
                 ($script:InstalledFontFiles | Select-Object -Unique).Count | Should -Be 1
             } finally {
-                if (Test-Path -LiteralPath $zipPath) {
-                    Remove-Item -LiteralPath $zipPath -Force -ErrorAction SilentlyContinue
+                if (Test-Path -LiteralPath $cacheTagDir) {
+                    Remove-Item -LiteralPath $cacheTagDir -Recurse -Force -ErrorAction SilentlyContinue
                 }
                 $script:NerdFonts = $originalFonts
                 Remove-Variable -Name InstalledFontFiles -Scope Script -ErrorAction SilentlyContinue
