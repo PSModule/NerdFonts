@@ -121,5 +121,68 @@ Describe 'Module' {
                 $script:NerdFonts = $originalFonts
             }
         }
+
+        It 'Install-NerdFont - Deduplicates variant files from cached archives' {
+            . (Join-Path -Path $PSScriptRoot -ChildPath '..\src\functions\public\Install-NerdFont.ps1')
+
+            $originalFonts = $script:NerdFonts
+            $fontName = 'DuplicateMonoTest'
+            $cacheRoot = if ($IsWindows) {
+                Join-Path -Path ([Environment]::GetFolderPath('LocalApplicationData')) -ChildPath 'PSModule/NerdFonts/cache'
+            } else {
+                Join-Path -Path $HOME -ChildPath '.cache/PSModule/NerdFonts'
+            }
+            $cacheTagDir = Join-Path -Path $cacheRoot -ChildPath 'v3.4.0'
+            $zipPath = Join-Path -Path $cacheTagDir -ChildPath 'DuplicateMonoTest.zip'
+
+            try {
+                if (-not (Test-Path -LiteralPath $cacheTagDir)) {
+                    $null = New-Item -ItemType Directory -Path $cacheTagDir -Force
+                }
+
+                $zipRoot = Join-Path -Path $TestDrive -ChildPath 'dup-zip'
+                $primaryDir = Join-Path -Path $zipRoot -ChildPath 'Primary'
+                $compatDir = Join-Path -Path $zipRoot -ChildPath 'Windows Compatible'
+                $null = New-Item -ItemType Directory -Path $primaryDir -Force
+                $null = New-Item -ItemType Directory -Path $compatDir -Force
+
+                $fileName = 'DuplicateMonoTestNerdFontMono-Regular.ttf'
+                Set-Content -Path (Join-Path -Path $primaryDir -ChildPath $fileName) -Value 'primary'
+                Set-Content -Path (Join-Path -Path $compatDir -ChildPath $fileName) -Value 'compat'
+
+                Add-Type -AssemblyName System.IO.Compression.FileSystem -ErrorAction SilentlyContinue
+                if (Test-Path -LiteralPath $zipPath) {
+                    Remove-Item -LiteralPath $zipPath -Force
+                }
+                [System.IO.Compression.ZipFile]::CreateFromDirectory($zipRoot, $zipPath)
+
+                $script:NerdFonts = @(
+                    [pscustomobject]@{
+                        Name = $fontName
+                        URL  = 'https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/DuplicateMonoTest.zip'
+                    }
+                )
+
+                Mock Get-Font { @() }
+                Mock Install-Font {
+                    param([string]$Path)
+                    $script:InstalledFontFiles = @(
+                        Get-ChildItem -Path $Path -Recurse -File -Include '*.ttf', '*.otf' |
+                            Select-Object -ExpandProperty Name
+                    )
+                }
+
+                { Install-NerdFont -Name $fontName -Variant Mono -ErrorAction Stop } | Should -Not -Throw
+                Should -Invoke Install-Font -Times 1 -Exactly
+                $script:InstalledFontFiles.Count | Should -Be 1
+                ($script:InstalledFontFiles | Select-Object -Unique).Count | Should -Be 1
+            } finally {
+                if (Test-Path -LiteralPath $zipPath) {
+                    Remove-Item -LiteralPath $zipPath -Force -ErrorAction SilentlyContinue
+                }
+                $script:NerdFonts = $originalFonts
+                Remove-Variable -Name InstalledFontFiles -Scope Script -ErrorAction SilentlyContinue
+            }
+        }
     }
 }

@@ -22,7 +22,7 @@
 {"Iteration":"1.0.33-pre006-variant-all","Scenario":"Single-Hack","DurationMs":1171,"DurationS":1.17,"Timestamp":"2026-05-17T14:05:52.0905786+02:00","Error":null,"Module":"1.0.33"}
 {"Iteration":"1.0.33-pre006-variant-all","Scenario":"Subset-Hack+FiraCode+JetBrainsMono","DurationMs":6096,"DurationS":6.1,"Timestamp":"2026-05-17T14:06:02.0498948+02:00","Error":null,"Module":"1.0.33"}
 {"Iteration":"1.0.33-pre006-variant-all","Scenario":"Subset-AlreadyInstalled","DurationMs":35,"DurationS":0.04,"Timestamp":"2026-05-17T14:06:02.1490854+02:00","Error":null,"Module":"1.0.33"}
-{"timestampUtc":"2026-05-17T12:06:18.1677417Z","iteration":"1.0.33-pre006-variant-mono","scenario":"Subset-Mono","durationSeconds":1.62,"moduleVersion":"1.0.33-pre006"}
+{"Iteration":"1.0.33-pre006-variant-mono","Scenario":"Subset-Mono","DurationMs":1620,"DurationS":1.62,"Timestamp":"2026-05-17T12:06:18.1677417Z","Error":null,"Module":"1.0.33"}
 {"Iteration":"1.0.33-pre007-parallel","Scenario":"Single-Hack","DurationMs":615,"DurationS":0.61,"Timestamp":"2026-05-17T14:32:21.0280298+02:00","Error":null,"Module":"1.0.33"}
 {"Iteration":"1.0.33-pre007-parallel","Scenario":"Subset-Hack+FiraCode+JetBrainsMono","DurationMs":3695,"DurationS":3.7,"Timestamp":"2026-05-17T14:32:24.9507727+02:00","Error":null,"Module":"1.0.33"}
 {"Iteration":"1.0.33-pre007-parallel","Scenario":"Subset-AlreadyInstalled","DurationMs":16,"DurationS":0.02,"Timestamp":"2026-05-17T14:32:25.0140743+02:00","Error":null,"Module":"1.0.33"}

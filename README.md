@@ -87,6 +87,21 @@ If the command returns results, the font is installed. If it returns nothing, th
 
 When you run `Install-NerdFont` again without `-Force`, fonts that are already installed in the requested scope are skipped. Downloaded archives are also cached per Nerd Fonts release so retries and repeated installs do not need to fetch the same ZIP again.
 
+Cache locations:
+
+- Windows: `%LOCALAPPDATA%/PSModule/NerdFonts/cache`
+- macOS and Linux: `$HOME/.cache/PSModule/NerdFonts`
+
+You can inspect the active cache path in PowerShell with:
+
+```powershell
+if ($IsWindows) {
+    Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'PSModule/NerdFonts/cache'
+} else {
+    Join-Path $HOME '.cache/PSModule/NerdFonts'
+}
+```
+
 ### Update an installed NerdFont
 
 Individual font files do not embed a NerdFonts release version, so there is no direct way to check whether an installed

@@ -147,7 +147,8 @@ Please run the command again with elevated rights (Run as Administrator) or prov
 
         Add-Type -AssemblyName System.Net.Http -ErrorAction SilentlyContinue
         $httpClient = [System.Net.Http.HttpClient]::new()
-        $httpClient.Timeout = [TimeSpan]::FromMinutes(5)
+        # Keep request lifetime unbounded for large archives on slower links.
+        $httpClient.Timeout = [System.Threading.Timeout]::InfiniteTimeSpan
         $pending = [System.Collections.Generic.List[object]]::new()
         $readyToInstall = [System.Collections.Generic.List[object]]::new()
         $throttle = [Math]::Max(1, [Environment]::ProcessorCount)
@@ -206,10 +207,6 @@ Please run the command again with elevated rights (Run as Administrator) or prov
                     try {
                         $bytes = $t.Task.GetAwaiter().GetResult()
                         [System.IO.File]::WriteAllBytes($t.Q.DownloadPath, $bytes)
-                        if (-not (Test-Path -LiteralPath $t.Q.CacheTagDir)) {
-                            $null = New-Item -ItemType Directory -Path $t.Q.CacheTagDir -Force
-                        }
-                        [System.IO.File]::WriteAllBytes($t.Q.CachedFile, $bytes)
                         $readyToInstall.Add($t.Q)
                     } catch {
                         Write-Error "[$($t.Q.Name)] - Download failed: $($_.Exception.Message)"
@@ -230,6 +227,18 @@ Please run the command again with elevated rights (Run as Administrator) or prov
                     $null = New-Item -ItemType Directory -Path $extractPath
                 }
                 [System.IO.Compression.ZipFile]::ExtractToDirectory($downloadPath, $extractPath, $true)
+
+                if (-not $p.FromCache -and (Test-Path -LiteralPath $downloadPath)) {
+                    try {
+                        if (-not (Test-Path -LiteralPath $p.CacheTagDir)) {
+                            $null = New-Item -ItemType Directory -Path $p.CacheTagDir -Force
+                        }
+                        Copy-Item -LiteralPath $downloadPath -Destination $p.CachedFile -Force
+                    } catch {
+                        Write-Warning "[$fontName] - Download succeeded but cache write failed: $($_.Exception.Message)"
+                    }
+                }
+
                 Remove-Item -Path $downloadPath -Force
             }
 
@@ -262,7 +271,22 @@ Please run the command again with elevated rights (Run as Administrator) or prov
                         $removed++
                     }
                 }
-                Write-Verbose "[$fontName] - Variant '$Variant' kept $($keep.Count) files, removed $removed"
+
+                # Nerd Fonts archives sometimes contain duplicate matching files in
+                # compatibility subfolders. Keep a single file per filename.
+                $remaining = @(Get-ChildItem -Path $extractPath -Recurse -File -Include '*.ttf', '*.otf')
+                $preferred = $remaining | Sort-Object 
+                    @{ Expression = { if ($_.FullName -match '(?i)[\\/]Windows Compatible[\\/]') { 1 } else { 0 } } },
+                    @{ Expression = { $_.FullName.Length } }
+                $seenFileNames = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+                $duplicateRemoved = 0
+                foreach ($file in $preferred) {
+                    if ($seenFileNames.Add($file.Name)) { continue }
+                    Remove-Item -LiteralPath $file.FullName -Force -ErrorAction SilentlyContinue
+                    $duplicateRemoved++
+                }
+
+                Write-Verbose "[$fontName] - Variant '$Variant' kept $($keep.Count) files, removed $removed and deduplicated $duplicateRemoved duplicates"
             }
 
             Write-Verbose "[$fontName] - Install to [$Scope]"
