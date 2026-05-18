@@ -271,23 +271,25 @@ Please run the command again with elevated rights (Run as Administrator) or prov
                         $removed++
                     }
                 }
+                Write-Verbose "[$fontName] - Variant '$Variant': kept $($keep.Count), removed $removed"
+            }
 
-                # Nerd Fonts archives sometimes contain duplicate matching files in
-                # compatibility subfolders. Keep a single file per filename.
-                $remaining = @(Get-ChildItem -Path $extractPath -Recurse -File -Include '*.ttf', '*.otf')
-                $preferred = $remaining | Sort-Object -Property @(
-                    @{ Expression = { if ($_.FullName -match '(?i)[\\/]Windows Compatible[\\/]') { 1 } else { 0 } } }
-                    @{ Expression = { $_.FullName.Length } }
-                )
-                $seenFileNames = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
-                $duplicateRemoved = 0
-                foreach ($file in $preferred) {
-                    if ($seenFileNames.Add($file.Name)) { continue }
-                    Remove-Item -LiteralPath $file.FullName -Force -ErrorAction SilentlyContinue
-                    $duplicateRemoved++
-                }
-
-                Write-Verbose "[$fontName] - Variant '$Variant': kept $($keep.Count), removed $removed, deduplicated $duplicateRemoved"
+            # Nerd Fonts archives sometimes contain duplicate matching files in
+            # compatibility subfolders. Keep a single file per filename.
+            $remaining = @(Get-ChildItem -Path $extractPath -Recurse -File -Include '*.ttf', '*.otf')
+            $preferred = $remaining | Sort-Object -Property @(
+                @{ Expression = { if ($_.FullName -match '(?i)[\\/]Windows Compatible[\\/]') { 1 } else { 0 } } }
+                @{ Expression = { $_.FullName.Length } }
+            )
+            $seenFileNames = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+            $duplicateRemoved = 0
+            foreach ($file in $preferred) {
+                if ($seenFileNames.Add($file.Name)) { continue }
+                Remove-Item -LiteralPath $file.FullName -Force -ErrorAction SilentlyContinue
+                $duplicateRemoved++
+            }
+            if ($duplicateRemoved -gt 0) {
+                Write-Verbose "[$fontName] - Deduplicated $duplicateRemoved file(s)"
             }
 
             Write-Verbose "[$fontName] - Install to [$Scope]"
