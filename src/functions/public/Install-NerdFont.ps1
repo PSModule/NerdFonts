@@ -275,9 +275,10 @@ Please run the command again with elevated rights (Run as Administrator) or prov
                 # Nerd Fonts archives sometimes contain duplicate matching files in
                 # compatibility subfolders. Keep a single file per filename.
                 $remaining = @(Get-ChildItem -Path $extractPath -Recurse -File -Include '*.ttf', '*.otf')
-                $preferred = $remaining | Sort-Object 
-                    @{ Expression = { if ($_.FullName -match '(?i)[\\/]Windows Compatible[\\/]') { 1 } else { 0 } } },
+                $preferred = $remaining | Sort-Object -Property @(
+                    @{ Expression = { if ($_.FullName -match '(?i)[\\/]Windows Compatible[\\/]') { 1 } else { 0 } } }
                     @{ Expression = { $_.FullName.Length } }
+                )
                 $seenFileNames = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
                 $duplicateRemoved = 0
                 foreach ($file in $preferred) {
@@ -286,7 +287,7 @@ Please run the command again with elevated rights (Run as Administrator) or prov
                     $duplicateRemoved++
                 }
 
-                Write-Verbose "[$fontName] - Variant '$Variant' kept $($keep.Count) files, removed $removed and deduplicated $duplicateRemoved duplicates"
+                Write-Verbose "[$fontName] - Variant '$Variant': kept $($keep.Count), removed $removed, deduplicated $duplicateRemoved"
             }
 
             Write-Verbose "[$fontName] - Install to [$Scope]"
