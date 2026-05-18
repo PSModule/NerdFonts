@@ -132,6 +132,47 @@ Describe 'Module' {
             }
         }
 
+        It 'Install-NerdFont - Falls back to download when cache read fails' {
+            . (Join-Path -Path $PSScriptRoot -ChildPath '..\src\functions\public\Install-NerdFont.ps1')
+
+            $originalFonts = $script:NerdFonts
+            $loadedFonts = Get-Content -Path (Join-Path $PSScriptRoot '..\src\FontsData.json') | ConvertFrom-Json
+            $goodFont = $loadedFonts | Where-Object Name -EQ 'Tinos' | Select-Object -First 1
+            $fontName = $goodFont.Name
+            $cacheRoot = if ($IsWindows) {
+                Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'PSModule/NerdFonts/cache'
+            } else {
+                Join-Path $HOME '.cache/PSModule/NerdFonts'
+            }
+            $cacheTag = if ($goodFont.URL -match '/releases/download/([^/]+)/') { $Matches[1] } else { 'unknown' }
+            $cacheTagDir = Join-Path $cacheRoot $cacheTag
+            $downloadFileName = Split-Path -Path $goodFont.URL -Leaf
+            $cachedFile = Join-Path $cacheTagDir $downloadFileName
+
+            try {
+                # Place a locked/corrupt placeholder so the cache-hit copy fails
+                if (-not (Test-Path -LiteralPath $cacheTagDir)) {
+                    $null = New-Item -ItemType Directory -Path $cacheTagDir -Force
+                }
+                # Create an empty directory with the same name to force Copy-Item failure
+                if (Test-Path -LiteralPath $cachedFile) { Remove-Item $cachedFile -Force }
+                $null = New-Item -ItemType Directory -Path $cachedFile -Force
+
+                $script:NerdFonts = @($goodFont)
+                Mock Get-Font { @() }
+                Mock Install-Font {}
+
+                # Should not throw — falls back to download
+                { Install-NerdFont -Name $fontName -Force:$false -ErrorAction Stop } | Should -Not -Throw
+                Should -Invoke Install-Font -Times 1 -Exactly
+            } finally {
+                if (Test-Path -LiteralPath $cachedFile) {
+                    Remove-Item -LiteralPath $cachedFile -Recurse -Force -ErrorAction SilentlyContinue
+                }
+                $script:NerdFonts = $originalFonts
+            }
+        }
+
         It 'Install-NerdFont - Deduplicates variant files from cached archives' {
             . (Join-Path -Path $PSScriptRoot -ChildPath '..\src\functions\public\Install-NerdFont.ps1')
 
