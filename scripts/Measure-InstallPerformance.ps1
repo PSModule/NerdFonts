@@ -54,7 +54,7 @@ function Invoke-Uninstall {
     foreach ($n in $Names) {
         # Nerd Fonts archives expand to multiple family names that all start
         # with the archive's base name (e.g. "Hack Nerd Font", "Hack Nerd Font Mono").
-        $families = Get-Font -Scope CurrentUser | Where-Object { $_.Name -like "$n*" }
+        $families = Get-Font -Scope CurrentUser | Where-Object { $_.Name -like "$n Nerd Font*" }
         foreach ($f in $families) {
             try {
                 Uninstall-Font -Name $f.Name -Scope CurrentUser -ErrorAction Stop

@@ -116,9 +116,6 @@ Please run the command again with elevated rights (Run as Administrator) or prov
         } else {
             Join-Path -Path $HOME -ChildPath '.cache/PSModule/NerdFonts'
         }
-        if (-not (Test-Path -LiteralPath $cacheRoot)) {
-            $null = New-Item -ItemType Directory -Path $cacheRoot -Force
-        }
 
         $installedFamilies = $null
         if (-not $Force) {
