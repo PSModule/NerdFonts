@@ -191,7 +191,9 @@ Describe 'Module' {
 
             # Backup any existing real cache entry to restore after the test
             $backupPath = "$cachedFile.test-bak"
+            $hadExistingCacheRoot = Test-Path -LiteralPath $cacheRoot
             $hadExistingCache = Test-Path -LiteralPath $cachedFile
+            $hadExistingTagDir = Test-Path -LiteralPath $cacheTagDir
             if ($hadExistingCache) {
                 Copy-Item -LiteralPath $cachedFile -Destination $backupPath -Force
             }
@@ -223,6 +225,12 @@ Describe 'Module' {
                     Remove-Item -LiteralPath $cachedFile -Force -ErrorAction SilentlyContinue
                     Remove-Item -LiteralPath $backupPath -Force -ErrorAction SilentlyContinue
                 }
+                if (-not $hadExistingTagDir -and (Test-Path -LiteralPath $cacheTagDir)) {
+                    Remove-Item -LiteralPath $cacheTagDir -Recurse -Force -ErrorAction SilentlyContinue
+                }
+                if (-not $hadExistingCacheRoot -and (Test-Path -LiteralPath $cacheRoot)) {
+                    Remove-Item -LiteralPath $cacheRoot -Recurse -Force -ErrorAction SilentlyContinue
+                }
                 $script:NerdFonts = $originalFonts
             }
         }
@@ -239,6 +247,7 @@ Describe 'Module' {
             }
             $cacheTagDir = Join-Path -Path $cacheRoot -ChildPath 'test-dedup-v0'
             $zipPath = Join-Path -Path $cacheTagDir -ChildPath 'DuplicateMonoTest.zip'
+            $hadExistingCacheRoot = Test-Path -LiteralPath $cacheRoot
 
             try {
                 if (-not (Test-Path -LiteralPath $cacheTagDir)) {
@@ -284,6 +293,9 @@ Describe 'Module' {
             } finally {
                 if (Test-Path -LiteralPath $cacheTagDir) {
                     Remove-Item -LiteralPath $cacheTagDir -Recurse -Force -ErrorAction SilentlyContinue
+                }
+                if (-not $hadExistingCacheRoot -and (Test-Path -LiteralPath $cacheRoot)) {
+                    Remove-Item -LiteralPath $cacheRoot -Recurse -Force -ErrorAction SilentlyContinue
                 }
                 $script:NerdFonts = $originalFonts
                 Remove-Variable -Name InstalledFontFiles -Scope Script -ErrorAction SilentlyContinue
