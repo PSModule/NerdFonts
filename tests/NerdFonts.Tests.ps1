@@ -89,23 +89,63 @@ Describe 'Module' {
         }
 
         It 'Install-NerdFont - Installs a font with -Variant Mono' {
-            { Install-NerdFont -Name 'Hack' -Variant Mono -Force } | Should -Not -Throw
-            $fonts = Get-Font -Name 'Hack Nerd Font*'
-            $fonts | Should -Not -BeNullOrEmpty
-            $mono = $fonts | Where-Object { $_.Name -like '*Mono*' }
-            $mono | Should -Not -BeNullOrEmpty
+            . (Join-Path -Path $PSScriptRoot -ChildPath '..\src\functions\public\Install-NerdFont.ps1')
+
+            $originalFonts = $script:NerdFonts
+            $loadedFonts = Get-Content -Path (Join-Path $PSScriptRoot '..\src\FontsData.json') | ConvertFrom-Json
+            $goodFont = $loadedFonts | Where-Object Name -EQ 'Hack' | Select-Object -First 1
+            $script:NerdFonts = @($goodFont)
+
+            try {
+                Mock Get-Font { @() }
+                Mock Install-Font {
+                    param([string]$Path)
+                    $script:InstalledFontFiles = @(
+                        Get-ChildItem -Path $Path -Recurse -File -Include '*.ttf', '*.otf' |
+                            Select-Object -ExpandProperty Name
+                    )
+                }
+
+                { Install-NerdFont -Name 'Hack' -Variant Mono -Force -ErrorAction Stop } | Should -Not -Throw
+                Should -Invoke Install-Font -Times 1 -Exactly
+                $script:InstalledFontFiles | Should -Not -BeNullOrEmpty
+                $script:InstalledFontFiles | ForEach-Object { $_ | Should -BeLike '*NerdFontMono*' }
+            } finally {
+                $script:NerdFonts = $originalFonts
+                Remove-Variable -Name InstalledFontFiles -Scope Script -ErrorAction SilentlyContinue
+            }
         }
 
         It 'Install-NerdFont - Installs a font with -Variant Standard' {
-            { Install-NerdFont -Name 'Hack' -Variant Standard -Force } | Should -Not -Throw
-            $fonts = Get-Font -Name 'Hack Nerd Font*'
-            $fonts | Should -Not -BeNullOrEmpty
-            $standard = $fonts | Where-Object {
-                $_.Name -like 'Hack Nerd Font*' -and
-                $_.Name -notlike '*Mono*' -and
-                $_.Name -notlike '*Propo*'
+            . (Join-Path -Path $PSScriptRoot -ChildPath '..\src\functions\public\Install-NerdFont.ps1')
+
+            $originalFonts = $script:NerdFonts
+            $loadedFonts = Get-Content -Path (Join-Path $PSScriptRoot '..\src\FontsData.json') | ConvertFrom-Json
+            $goodFont = $loadedFonts | Where-Object Name -EQ 'Hack' | Select-Object -First 1
+            $script:NerdFonts = @($goodFont)
+
+            try {
+                Mock Get-Font { @() }
+                Mock Install-Font {
+                    param([string]$Path)
+                    $script:InstalledFontFiles = @(
+                        Get-ChildItem -Path $Path -Recurse -File -Include '*.ttf', '*.otf' |
+                            Select-Object -ExpandProperty Name
+                    )
+                }
+
+                { Install-NerdFont -Name 'Hack' -Variant Standard -Force -ErrorAction Stop } | Should -Not -Throw
+                Should -Invoke Install-Font -Times 1 -Exactly
+                $script:InstalledFontFiles | Should -Not -BeNullOrEmpty
+                $script:InstalledFontFiles | ForEach-Object {
+                    $_ | Should -BeLike '*NerdFont*'
+                    $_ | Should -Not -BeLike '*NerdFontMono*'
+                    $_ | Should -Not -BeLike '*NerdFontPropo*'
+                }
+            } finally {
+                $script:NerdFonts = $originalFonts
+                Remove-Variable -Name InstalledFontFiles -Scope Script -ErrorAction SilentlyContinue
             }
-            $standard | Should -Not -BeNullOrEmpty
         }
 
         It 'Install-NerdFont - Handles -All without downloading already installed fonts' {
@@ -149,25 +189,39 @@ Describe 'Module' {
             $downloadFileName = Split-Path -Path $goodFont.URL -Leaf
             $cachedFile = Join-Path $cacheTagDir $downloadFileName
 
+            # Backup any existing real cache entry to restore after the test
+            $backupPath = "$cachedFile.test-bak"
+            $hadExistingCache = Test-Path -LiteralPath $cachedFile
+            if ($hadExistingCache) {
+                Copy-Item -LiteralPath $cachedFile -Destination $backupPath -Force
+            }
+
             try {
-                # Place a locked/corrupt placeholder so the cache-hit copy fails
+                # Place a regular placeholder file so Test-Path returns true for cache-hit detection
                 if (-not (Test-Path -LiteralPath $cacheTagDir)) {
                     $null = New-Item -ItemType Directory -Path $cacheTagDir -Force
                 }
-                # Create an empty directory with the same name to force Copy-Item failure
-                if (Test-Path -LiteralPath $cachedFile) { Remove-Item $cachedFile -Force }
-                $null = New-Item -ItemType Directory -Path $cachedFile -Force
+                Set-Content -LiteralPath $cachedFile -Value 'placeholder'
 
                 $script:NerdFonts = @($goodFont)
                 Mock Get-Font { @() }
                 Mock Install-Font {}
+                # Mock Copy-Item to throw only for the cache-read path, simulating
+                # a locked/unreadable cached file cross-platform.
+                Mock Copy-Item {
+                    throw 'Simulated cache read failure'
+                } -ParameterFilter { $LiteralPath -and $LiteralPath -eq $cachedFile }
 
                 # Should not throw — falls back to download
                 { Install-NerdFont -Name $fontName -Force:$false -ErrorAction Stop } | Should -Not -Throw
                 Should -Invoke Install-Font -Times 1 -Exactly
             } finally {
-                if (Test-Path -LiteralPath $cachedFile) {
-                    Remove-Item -LiteralPath $cachedFile -Recurse -Force -ErrorAction SilentlyContinue
+                # Restore original cache state so no user/CI state is mutated
+                if ($hadExistingCache) {
+                    Move-Item -LiteralPath $backupPath -Destination $cachedFile -Force -ErrorAction SilentlyContinue
+                } else {
+                    Remove-Item -LiteralPath $cachedFile -Force -ErrorAction SilentlyContinue
+                    Remove-Item -LiteralPath $backupPath -Force -ErrorAction SilentlyContinue
                 }
                 $script:NerdFonts = $originalFonts
             }
