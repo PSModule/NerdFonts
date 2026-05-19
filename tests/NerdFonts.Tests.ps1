@@ -110,24 +110,23 @@ Describe 'Module' {
 
             try {
                 Mock -ModuleName NerdFonts Get-Font { @() }
-                Mock -ModuleName NerdFonts Install-Font {
-                    param([string]$Path)
+                $script:TestCapturedFiles = $null
+                Mock -ModuleName NerdFonts Install-Font {} -ParameterFilter {
                     $script:TestCapturedFiles = @(
                         Get-ChildItem -Path $Path -Recurse -File -Include '*.ttf', '*.otf' |
                             Select-Object -ExpandProperty Name
                     )
+                    $true
                 }
 
                 { Install-NerdFont -Name 'Hack' -Variant Mono -Force -ErrorAction Stop } | Should -Not -Throw
                 Should -Invoke -ModuleName NerdFonts Install-Font -Times 1 -Exactly
-                $captured = InModuleScope NerdFonts { $script:TestCapturedFiles }
-                $captured | Should -Not -BeNullOrEmpty
-                $captured | ForEach-Object { $_ | Should -BeLike '*NerdFontMono*' }
+                $script:TestCapturedFiles | Should -Not -BeNullOrEmpty
+                $script:TestCapturedFiles | ForEach-Object { $_ | Should -BeLike '*NerdFontMono*' }
             } finally {
                 InModuleScope NerdFonts -Parameters @{ fonts = $originalFonts } {
                     param($fonts)
                     $script:NerdFonts = $fonts
-                    Remove-Variable TestCapturedFiles -Scope Script -ErrorAction SilentlyContinue
                 }
             }
         }
@@ -144,19 +143,19 @@ Describe 'Module' {
 
             try {
                 Mock -ModuleName NerdFonts Get-Font { @() }
-                Mock -ModuleName NerdFonts Install-Font {
-                    param([string]$Path)
+                $script:TestCapturedFiles = $null
+                Mock -ModuleName NerdFonts Install-Font {} -ParameterFilter {
                     $script:TestCapturedFiles = @(
                         Get-ChildItem -Path $Path -Recurse -File -Include '*.ttf', '*.otf' |
                             Select-Object -ExpandProperty Name
                     )
+                    $true
                 }
 
                 { Install-NerdFont -Name 'Hack' -Variant Standard -Force -ErrorAction Stop } | Should -Not -Throw
                 Should -Invoke -ModuleName NerdFonts Install-Font -Times 1 -Exactly
-                $captured = InModuleScope NerdFonts { $script:TestCapturedFiles }
-                $captured | Should -Not -BeNullOrEmpty
-                $captured | ForEach-Object {
+                $script:TestCapturedFiles | Should -Not -BeNullOrEmpty
+                $script:TestCapturedFiles | ForEach-Object {
                     $_ | Should -BeLike '*NerdFont*'
                     $_ | Should -Not -BeLike '*NerdFontMono*'
                     $_ | Should -Not -BeLike '*NerdFontPropo*'
@@ -165,7 +164,6 @@ Describe 'Module' {
                 InModuleScope NerdFonts -Parameters @{ fonts = $originalFonts } {
                     param($fonts)
                     $script:NerdFonts = $fonts
-                    Remove-Variable TestCapturedFiles -Scope Script -ErrorAction SilentlyContinue
                 }
             }
         }
@@ -182,24 +180,23 @@ Describe 'Module' {
 
             try {
                 Mock -ModuleName NerdFonts Get-Font { @() }
-                Mock -ModuleName NerdFonts Install-Font {
-                    param([string]$Path)
+                $script:TestCapturedFiles = $null
+                Mock -ModuleName NerdFonts Install-Font {} -ParameterFilter {
                     $script:TestCapturedFiles = @(
                         Get-ChildItem -Path $Path -Recurse -File -Include '*.ttf', '*.otf' |
                             Select-Object -ExpandProperty Name
                     )
+                    $true
                 }
 
                 { Install-NerdFont -Name 'Hack' -Variant Propo -Force -ErrorAction Stop } | Should -Not -Throw
                 Should -Invoke -ModuleName NerdFonts Install-Font -Times 1 -Exactly
-                $captured = InModuleScope NerdFonts { $script:TestCapturedFiles }
-                $captured | Should -Not -BeNullOrEmpty
-                $captured | ForEach-Object { $_ | Should -BeLike '*NerdFontPropo*' }
+                $script:TestCapturedFiles | Should -Not -BeNullOrEmpty
+                $script:TestCapturedFiles | ForEach-Object { $_ | Should -BeLike '*NerdFontPropo*' }
             } finally {
                 InModuleScope NerdFonts -Parameters @{ fonts = $originalFonts } {
                     param($fonts)
                     $script:NerdFonts = $fonts
-                    Remove-Variable TestCapturedFiles -Scope Script -ErrorAction SilentlyContinue
                 }
             }
         }
@@ -352,19 +349,19 @@ Describe 'Module' {
                 }
 
                 Mock -ModuleName NerdFonts Get-Font { @() }
-                Mock -ModuleName NerdFonts Install-Font {
-                    param([string]$Path)
+                $script:TestCapturedFiles = $null
+                Mock -ModuleName NerdFonts Install-Font {} -ParameterFilter {
                     $script:TestCapturedFiles = @(
                         Get-ChildItem -Path $Path -Recurse -File -Include '*.ttf', '*.otf' |
                             Select-Object -ExpandProperty Name
                     )
+                    $true
                 }
 
                 { Install-NerdFont -Name $fontName -Variant Mono -ErrorAction Stop } | Should -Not -Throw
                 Should -Invoke -ModuleName NerdFonts Install-Font -Times 1 -Exactly
-                $captured = InModuleScope NerdFonts { $script:TestCapturedFiles }
-                $captured.Count | Should -Be 1
-                ($captured | Select-Object -Unique).Count | Should -Be 1
+                $script:TestCapturedFiles.Count | Should -Be 1
+                ($script:TestCapturedFiles | Select-Object -Unique).Count | Should -Be 1
             } finally {
                 if (Test-Path -LiteralPath $cacheTagDir) {
                     Remove-Item -LiteralPath $cacheTagDir -Recurse -Force -ErrorAction SilentlyContinue
@@ -375,7 +372,6 @@ Describe 'Module' {
                 InModuleScope NerdFonts -Parameters @{ fonts = $originalFonts } {
                     param($fonts)
                     $script:NerdFonts = $fonts
-                    Remove-Variable TestCapturedFiles -Scope Script -ErrorAction SilentlyContinue
                 }
             }
         }

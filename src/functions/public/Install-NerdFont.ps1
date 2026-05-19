@@ -246,15 +246,15 @@ Please run the command again with elevated rights (Run as Administrator) or prov
                 if (-not $p.FromCache -and (Test-Path -LiteralPath $downloadPath)) {
                     try {
                         if (-not (Test-Path -LiteralPath $p.CacheTagDir)) {
-                            $null = New-Item -ItemType Directory -Path $p.CacheTagDir -Force
+                            $null = New-Item -ItemType Directory -Path $p.CacheTagDir -Force -ErrorAction Stop
                         }
-                        $tempCachePath = "$($p.CachedFile).tmp"
-                        Copy-Item -LiteralPath $downloadPath -Destination $tempCachePath -Force
-                        Move-Item -LiteralPath $tempCachePath -Destination $p.CachedFile -Force
+                        $tempCachePath = "$($p.CachedFile).$PID.tmp"
+                        Copy-Item -LiteralPath $downloadPath -Destination $tempCachePath -Force -ErrorAction Stop
+                        Move-Item -LiteralPath $tempCachePath -Destination $p.CachedFile -Force -ErrorAction Stop
                     } catch {
                         Write-Warning "[$fontName] - Download succeeded but cache write failed: $($_.Exception.Message)"
-                        if (Test-Path -LiteralPath "$($p.CachedFile).tmp") {
-                            Remove-Item -LiteralPath "$($p.CachedFile).tmp" -Force -ErrorAction SilentlyContinue
+                        if (Test-Path -LiteralPath $tempCachePath) {
+                            Remove-Item -LiteralPath $tempCachePath -Force -ErrorAction SilentlyContinue
                         }
                     }
                 }
