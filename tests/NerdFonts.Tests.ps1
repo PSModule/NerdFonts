@@ -41,141 +41,205 @@ Describe 'Module' {
         }
 
         It 'Install-NerdFont - Continues when one queued download fails' {
-            . (Join-Path -Path $PSScriptRoot -ChildPath '..\src\functions\public\Install-NerdFont.ps1')
-
-            $originalFonts = $script:NerdFonts
+            $originalFonts = InModuleScope NerdFonts { $script:NerdFonts }
             $loadedFonts = Get-Content -Path (Join-Path -Path $PSScriptRoot -ChildPath '..\src\FontsData.json') | ConvertFrom-Json
             $goodFont = $loadedFonts | Where-Object Name -EQ 'Tinos' | Select-Object -First 1
 
-            $script:NerdFonts = @(
+            $testFonts = @(
                 [pscustomobject]@{
                     Name = 'BrokenDownloadTest'
                     URL  = 'https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/does-not-exist.zip'
                 },
                 $goodFont
             )
+            InModuleScope NerdFonts -Parameters @{ fonts = $testFonts } {
+                param($fonts)
+                $script:NerdFonts = $fonts
+            }
 
             try {
-                Mock Install-Font {}
+                Mock -ModuleName NerdFonts Install-Font {}
                 { Install-NerdFont -Name @('BrokenDownloadTest', 'Tinos') -Force -ErrorAction SilentlyContinue } | Should -Not -Throw
-                Should -Invoke Install-Font -Times 1 -Exactly
+                Should -Invoke -ModuleName NerdFonts Install-Font -Times 1 -Exactly
             } finally {
-                $script:NerdFonts = $originalFonts
+                InModuleScope NerdFonts -Parameters @{ fonts = $originalFonts } {
+                    param($fonts)
+                    $script:NerdFonts = $fonts
+                }
             }
         }
 
         It 'Install-NerdFont - Skips already installed fonts without downloading' {
-            . (Join-Path -Path $PSScriptRoot -ChildPath '..\src\functions\public\Install-NerdFont.ps1')
-
-            $originalFonts = $script:NerdFonts
-            $script:NerdFonts = @(
+            $originalFonts = InModuleScope NerdFonts { $script:NerdFonts }
+            $testFonts = @(
                 [pscustomobject]@{
                     Name = 'AlreadyInstalledTest'
                     URL  = 'https://example.invalid/already-installed.zip'
                 }
             )
+            InModuleScope NerdFonts -Parameters @{ fonts = $testFonts } {
+                param($fonts)
+                $script:NerdFonts = $fonts
+            }
 
             try {
-                Mock Get-Font {
+                Mock -ModuleName NerdFonts Get-Font {
                     [pscustomobject]@{ Name = 'AlreadyInstalledTest Nerd Font' }
                 }
-                Mock Install-Font {}
+                Mock -ModuleName NerdFonts Install-Font {}
 
                 { Install-NerdFont -Name 'AlreadyInstalledTest' -ErrorAction Stop } | Should -Not -Throw
-                Should -Invoke Install-Font -Times 0 -Exactly
+                Should -Invoke -ModuleName NerdFonts Install-Font -Times 0 -Exactly
             } finally {
-                $script:NerdFonts = $originalFonts
+                InModuleScope NerdFonts -Parameters @{ fonts = $originalFonts } {
+                    param($fonts)
+                    $script:NerdFonts = $fonts
+                }
             }
         }
 
         It 'Install-NerdFont - Installs a font with -Variant Mono' {
-            . (Join-Path -Path $PSScriptRoot -ChildPath '..\src\functions\public\Install-NerdFont.ps1')
-
-            $originalFonts = $script:NerdFonts
+            $originalFonts = InModuleScope NerdFonts { $script:NerdFonts }
             $loadedFonts = Get-Content -Path (Join-Path $PSScriptRoot '..\src\FontsData.json') | ConvertFrom-Json
             $goodFont = $loadedFonts | Where-Object Name -EQ 'Hack' | Select-Object -First 1
-            $script:NerdFonts = @($goodFont)
+            $testFonts = @($goodFont)
+            InModuleScope NerdFonts -Parameters @{ fonts = $testFonts } {
+                param($fonts)
+                $script:NerdFonts = $fonts
+            }
 
             try {
-                Mock Get-Font { @() }
-                Mock Install-Font {
+                Mock -ModuleName NerdFonts Get-Font { @() }
+                Mock -ModuleName NerdFonts Install-Font {
                     param([string]$Path)
-                    $script:InstalledFontFiles = @(
+                    $script:TestCapturedFiles = @(
                         Get-ChildItem -Path $Path -Recurse -File -Include '*.ttf', '*.otf' |
                             Select-Object -ExpandProperty Name
                     )
                 }
 
                 { Install-NerdFont -Name 'Hack' -Variant Mono -Force -ErrorAction Stop } | Should -Not -Throw
-                Should -Invoke Install-Font -Times 1 -Exactly
-                $script:InstalledFontFiles | Should -Not -BeNullOrEmpty
-                $script:InstalledFontFiles | ForEach-Object { $_ | Should -BeLike '*NerdFontMono*' }
+                Should -Invoke -ModuleName NerdFonts Install-Font -Times 1 -Exactly
+                $captured = InModuleScope NerdFonts { $script:TestCapturedFiles }
+                $captured | Should -Not -BeNullOrEmpty
+                $captured | ForEach-Object { $_ | Should -BeLike '*NerdFontMono*' }
             } finally {
-                $script:NerdFonts = $originalFonts
-                Remove-Variable -Name InstalledFontFiles -Scope Script -ErrorAction SilentlyContinue
+                InModuleScope NerdFonts -Parameters @{ fonts = $originalFonts } {
+                    param($fonts)
+                    $script:NerdFonts = $fonts
+                    Remove-Variable TestCapturedFiles -Scope Script -ErrorAction SilentlyContinue
+                }
             }
         }
 
         It 'Install-NerdFont - Installs a font with -Variant Standard' {
-            . (Join-Path -Path $PSScriptRoot -ChildPath '..\src\functions\public\Install-NerdFont.ps1')
-
-            $originalFonts = $script:NerdFonts
+            $originalFonts = InModuleScope NerdFonts { $script:NerdFonts }
             $loadedFonts = Get-Content -Path (Join-Path $PSScriptRoot '..\src\FontsData.json') | ConvertFrom-Json
             $goodFont = $loadedFonts | Where-Object Name -EQ 'Hack' | Select-Object -First 1
-            $script:NerdFonts = @($goodFont)
+            $testFonts = @($goodFont)
+            InModuleScope NerdFonts -Parameters @{ fonts = $testFonts } {
+                param($fonts)
+                $script:NerdFonts = $fonts
+            }
 
             try {
-                Mock Get-Font { @() }
-                Mock Install-Font {
+                Mock -ModuleName NerdFonts Get-Font { @() }
+                Mock -ModuleName NerdFonts Install-Font {
                     param([string]$Path)
-                    $script:InstalledFontFiles = @(
+                    $script:TestCapturedFiles = @(
                         Get-ChildItem -Path $Path -Recurse -File -Include '*.ttf', '*.otf' |
                             Select-Object -ExpandProperty Name
                     )
                 }
 
                 { Install-NerdFont -Name 'Hack' -Variant Standard -Force -ErrorAction Stop } | Should -Not -Throw
-                Should -Invoke Install-Font -Times 1 -Exactly
-                $script:InstalledFontFiles | Should -Not -BeNullOrEmpty
-                $script:InstalledFontFiles | ForEach-Object {
+                Should -Invoke -ModuleName NerdFonts Install-Font -Times 1 -Exactly
+                $captured = InModuleScope NerdFonts { $script:TestCapturedFiles }
+                $captured | Should -Not -BeNullOrEmpty
+                $captured | ForEach-Object {
                     $_ | Should -BeLike '*NerdFont*'
                     $_ | Should -Not -BeLike '*NerdFontMono*'
                     $_ | Should -Not -BeLike '*NerdFontPropo*'
                 }
             } finally {
-                $script:NerdFonts = $originalFonts
-                Remove-Variable -Name InstalledFontFiles -Scope Script -ErrorAction SilentlyContinue
+                InModuleScope NerdFonts -Parameters @{ fonts = $originalFonts } {
+                    param($fonts)
+                    $script:NerdFonts = $fonts
+                    Remove-Variable TestCapturedFiles -Scope Script -ErrorAction SilentlyContinue
+                }
+            }
+        }
+
+        It 'Install-NerdFont - Installs a font with -Variant Propo' {
+            $originalFonts = InModuleScope NerdFonts { $script:NerdFonts }
+            $loadedFonts = Get-Content -Path (Join-Path $PSScriptRoot '..\src\FontsData.json') | ConvertFrom-Json
+            $goodFont = $loadedFonts | Where-Object Name -EQ 'Hack' | Select-Object -First 1
+            $testFonts = @($goodFont)
+            InModuleScope NerdFonts -Parameters @{ fonts = $testFonts } {
+                param($fonts)
+                $script:NerdFonts = $fonts
+            }
+
+            try {
+                Mock -ModuleName NerdFonts Get-Font { @() }
+                Mock -ModuleName NerdFonts Install-Font {
+                    param([string]$Path)
+                    $script:TestCapturedFiles = @(
+                        Get-ChildItem -Path $Path -Recurse -File -Include '*.ttf', '*.otf' |
+                            Select-Object -ExpandProperty Name
+                    )
+                }
+
+                { Install-NerdFont -Name 'Hack' -Variant Propo -Force -ErrorAction Stop } | Should -Not -Throw
+                Should -Invoke -ModuleName NerdFonts Install-Font -Times 1 -Exactly
+                $captured = InModuleScope NerdFonts { $script:TestCapturedFiles }
+                $captured | Should -Not -BeNullOrEmpty
+                $captured | ForEach-Object { $_ | Should -BeLike '*NerdFontPropo*' }
+            } finally {
+                InModuleScope NerdFonts -Parameters @{ fonts = $originalFonts } {
+                    param($fonts)
+                    $script:NerdFonts = $fonts
+                    Remove-Variable TestCapturedFiles -Scope Script -ErrorAction SilentlyContinue
+                }
             }
         }
 
         It 'Install-NerdFont - Handles -All without downloading already installed fonts' {
-            . (Join-Path -Path $PSScriptRoot -ChildPath '..\src\functions\public\Install-NerdFont.ps1')
-
-            $originalFonts = $script:NerdFonts
-            $script:NerdFonts = @(
+            $originalFonts = InModuleScope NerdFonts { $script:NerdFonts }
+            $testFonts = @(
                 [pscustomobject]@{
                     Name = 'AllPathSmokeTest'
                     URL  = 'https://example.invalid/all-path-smoke.zip'
                 }
             )
+            InModuleScope NerdFonts -Parameters @{ fonts = $testFonts } {
+                param($fonts)
+                $script:NerdFonts = $fonts
+            }
 
             try {
-                Mock Get-Font {
+                Mock -ModuleName NerdFonts Get-Font {
                     [pscustomobject]@{ Name = 'AllPathSmokeTest Nerd Font' }
                 }
-                Mock Install-Font {}
+                Mock -ModuleName NerdFonts Install-Font {}
 
                 { Install-NerdFont -All -Verbose -ErrorAction Stop } | Should -Not -Throw
-                Should -Invoke Install-Font -Times 0 -Exactly
+                Should -Invoke -ModuleName NerdFonts Install-Font -Times 0 -Exactly
             } finally {
-                $script:NerdFonts = $originalFonts
+                InModuleScope NerdFonts -Parameters @{ fonts = $originalFonts } {
+                    param($fonts)
+                    $script:NerdFonts = $fonts
+                }
             }
         }
 
-        It 'Install-NerdFont - Falls back to download when cache read fails' {
-            . (Join-Path -Path $PSScriptRoot -ChildPath '..\src\functions\public\Install-NerdFont.ps1')
+        It 'Install-NerdFont - Throws when -Scope AllUsers without admin rights' {
+            Mock -ModuleName NerdFonts IsAdmin { $false }
+            { Install-NerdFont -Name 'Tinos' -Scope AllUsers -ErrorAction Stop } | Should -Throw '*Administrator*'
+        }
 
-            $originalFonts = $script:NerdFonts
+        It 'Install-NerdFont - Falls back to download when cache read fails' {
+            $originalFonts = InModuleScope NerdFonts { $script:NerdFonts }
             $loadedFonts = Get-Content -Path (Join-Path $PSScriptRoot '..\src\FontsData.json') | ConvertFrom-Json
             $goodFont = $loadedFonts | Where-Object Name -EQ 'Tinos' | Select-Object -First 1
             $fontName = $goodFont.Name
@@ -198,6 +262,12 @@ Describe 'Module' {
                 Copy-Item -LiteralPath $cachedFile -Destination $backupPath -Force
             }
 
+            $testFonts = @($goodFont)
+            InModuleScope NerdFonts -Parameters @{ fonts = $testFonts } {
+                param($fonts)
+                $script:NerdFonts = $fonts
+            }
+
             try {
                 # Place a regular placeholder file so Test-Path returns true for cache-hit detection
                 if (-not (Test-Path -LiteralPath $cacheTagDir)) {
@@ -205,18 +275,17 @@ Describe 'Module' {
                 }
                 Set-Content -LiteralPath $cachedFile -Value 'placeholder'
 
-                $script:NerdFonts = @($goodFont)
-                Mock Get-Font { @() }
-                Mock Install-Font {}
+                Mock -ModuleName NerdFonts Get-Font { @() }
+                Mock -ModuleName NerdFonts Install-Font {}
                 # Mock Copy-Item to throw only for the cache-read path, simulating
                 # a locked/unreadable cached file cross-platform.
-                Mock Copy-Item {
+                Mock -ModuleName NerdFonts Copy-Item {
                     throw 'Simulated cache read failure'
                 } -ParameterFilter { $LiteralPath -and $LiteralPath -eq $cachedFile }
 
                 # Should not throw — falls back to download
                 { Install-NerdFont -Name $fontName -Force:$false -ErrorAction Stop } | Should -Not -Throw
-                Should -Invoke Install-Font -Times 1 -Exactly
+                Should -Invoke -ModuleName NerdFonts Install-Font -Times 1 -Exactly
             } finally {
                 # Restore original cache state so no user/CI state is mutated
                 if ($hadExistingCache) {
@@ -231,14 +300,15 @@ Describe 'Module' {
                 if (-not $hadExistingCacheRoot -and (Test-Path -LiteralPath $cacheRoot)) {
                     Remove-Item -LiteralPath $cacheRoot -Recurse -Force -ErrorAction SilentlyContinue
                 }
-                $script:NerdFonts = $originalFonts
+                InModuleScope NerdFonts -Parameters @{ fonts = $originalFonts } {
+                    param($fonts)
+                    $script:NerdFonts = $fonts
+                }
             }
         }
 
         It 'Install-NerdFont - Deduplicates variant files from cached archives' {
-            . (Join-Path -Path $PSScriptRoot -ChildPath '..\src\functions\public\Install-NerdFont.ps1')
-
-            $originalFonts = $script:NerdFonts
+            $originalFonts = InModuleScope NerdFonts { $script:NerdFonts }
             $fontName = 'DuplicateMonoTest'
             $cacheRoot = if ($IsWindows) {
                 Join-Path -Path ([Environment]::GetFolderPath('LocalApplicationData')) -ChildPath 'PSModule/NerdFonts/cache'
@@ -270,26 +340,31 @@ Describe 'Module' {
                 }
                 [System.IO.Compression.ZipFile]::CreateFromDirectory($zipRoot, $zipPath)
 
-                $script:NerdFonts = @(
+                $testFonts = @(
                     [pscustomobject]@{
                         Name = $fontName
                         URL  = 'https://github.com/ryanoasis/nerd-fonts/releases/download/test-dedup-v0/DuplicateMonoTest.zip'
                     }
                 )
+                InModuleScope NerdFonts -Parameters @{ fonts = $testFonts } {
+                    param($fonts)
+                    $script:NerdFonts = $fonts
+                }
 
-                Mock Get-Font { @() }
-                Mock Install-Font {
+                Mock -ModuleName NerdFonts Get-Font { @() }
+                Mock -ModuleName NerdFonts Install-Font {
                     param([string]$Path)
-                    $script:InstalledFontFiles = @(
+                    $script:TestCapturedFiles = @(
                         Get-ChildItem -Path $Path -Recurse -File -Include '*.ttf', '*.otf' |
                             Select-Object -ExpandProperty Name
                     )
                 }
 
                 { Install-NerdFont -Name $fontName -Variant Mono -ErrorAction Stop } | Should -Not -Throw
-                Should -Invoke Install-Font -Times 1 -Exactly
-                $script:InstalledFontFiles.Count | Should -Be 1
-                ($script:InstalledFontFiles | Select-Object -Unique).Count | Should -Be 1
+                Should -Invoke -ModuleName NerdFonts Install-Font -Times 1 -Exactly
+                $captured = InModuleScope NerdFonts { $script:TestCapturedFiles }
+                $captured.Count | Should -Be 1
+                ($captured | Select-Object -Unique).Count | Should -Be 1
             } finally {
                 if (Test-Path -LiteralPath $cacheTagDir) {
                     Remove-Item -LiteralPath $cacheTagDir -Recurse -Force -ErrorAction SilentlyContinue
@@ -297,8 +372,11 @@ Describe 'Module' {
                 if (-not $hadExistingCacheRoot -and (Test-Path -LiteralPath $cacheRoot)) {
                     Remove-Item -LiteralPath $cacheRoot -Recurse -Force -ErrorAction SilentlyContinue
                 }
-                $script:NerdFonts = $originalFonts
-                Remove-Variable -Name InstalledFontFiles -Scope Script -ErrorAction SilentlyContinue
+                InModuleScope NerdFonts -Parameters @{ fonts = $originalFonts } {
+                    param($fonts)
+                    $script:NerdFonts = $fonts
+                    Remove-Variable TestCapturedFiles -Scope Script -ErrorAction SilentlyContinue
+                }
             }
         }
     }
