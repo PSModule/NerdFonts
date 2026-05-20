@@ -37,6 +37,12 @@ To download the font from the NerdFonts repository and install it on the system,
 Install-NerdFont -Name 'FiraCode' -Scope AllUsers #Tab completion works on Scope too
 ```
 
+To install only a specific variant from the archive, use the `-Variant` parameter. `Mono` is useful for terminal and editor setups where you only want the monospace family.
+
+```powershell
+Install-NerdFont -Name 'FiraCode' -Variant Mono
+```
+
 ### Install all NerdFonts
 
 To install all NerdFonts on the system you can use the following command.
@@ -52,6 +58,12 @@ This requires the shell to run in an elevated context (sudo or run as administra
 
 ```powershell
 Install-NerdFont -All -Scope AllUsers
+```
+
+You can combine `-All` with `-Variant` to limit what gets installed from each archive:
+
+```powershell
+Install-NerdFont -All -Variant Mono
 ```
 
 ### Check if a NerdFont is installed
@@ -73,6 +85,23 @@ Get-Font -Name 'FiraCode*' -Scope AllUsers
 
 If the command returns results, the font is installed. If it returns nothing, the font is not installed in that scope.
 
+When you run `Install-NerdFont` again without `-Force`, fonts that are already installed in the requested scope are skipped. Downloaded archives are also cached per Nerd Fonts release so retries and repeated installs do not need to fetch the same ZIP again.
+
+Cache locations:
+
+- Windows: `%LOCALAPPDATA%/PSModule/NerdFonts/cache`
+- macOS and Linux: `$HOME/.cache/PSModule/NerdFonts`
+
+You can inspect the active cache path in PowerShell with:
+
+```powershell
+if ($IsWindows) {
+    Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'PSModule/NerdFonts/cache'
+} else {
+    Join-Path $HOME '.cache/PSModule/NerdFonts'
+}
+```
+
 ### Update an installed NerdFont
 
 Individual font files do not embed a NerdFonts release version, so there is no direct way to check whether an installed
@@ -89,7 +118,7 @@ Install-NerdFont -Name 'FiraCode' -Force -Scope AllUsers
 ```
 
 This re-downloads and installs the font version bundled with your installed NerdFonts module, overwriting any existing
-files. To pick up newer font releases, update the NerdFonts module first (`Update-PSResource -Name NerdFonts` if you
+files. `-Force` also bypasses the local archive cache so the font ZIP is fetched again before reinstalling. To pick up newer font releases, update the NerdFonts module first (`Update-PSResource -Name NerdFonts` if you
 installed via PSResourceGet, or `Update-Module -Name NerdFonts` if you installed via PowerShellGet).
 
 ### Uninstall a NerdFont
