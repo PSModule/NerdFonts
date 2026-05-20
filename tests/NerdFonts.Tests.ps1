@@ -119,7 +119,7 @@ Describe 'Module' {
                     $true
                 }
 
-                { Install-NerdFont -Name 'Hack' -Variant Mono -Force -ErrorAction Stop } | Should -Not -Throw
+                { Install-NerdFont -Name 'Hack' -Variant Mono -ErrorAction Stop } | Should -Not -Throw
                 Should -Invoke -ModuleName NerdFonts Install-Font -Times 1 -Exactly
                 $script:TestCapturedFiles | Should -Not -BeNullOrEmpty
                 $script:TestCapturedFiles | ForEach-Object { $_ | Should -BeLike '*NerdFontMono*' }
@@ -152,7 +152,7 @@ Describe 'Module' {
                     $true
                 }
 
-                { Install-NerdFont -Name 'Hack' -Variant Standard -Force -ErrorAction Stop } | Should -Not -Throw
+                { Install-NerdFont -Name 'Hack' -Variant Standard -ErrorAction Stop } | Should -Not -Throw
                 Should -Invoke -ModuleName NerdFonts Install-Font -Times 1 -Exactly
                 $script:TestCapturedFiles | Should -Not -BeNullOrEmpty
                 $script:TestCapturedFiles | ForEach-Object {
@@ -189,7 +189,7 @@ Describe 'Module' {
                     $true
                 }
 
-                { Install-NerdFont -Name 'Hack' -Variant Propo -Force -ErrorAction Stop } | Should -Not -Throw
+                { Install-NerdFont -Name 'Hack' -Variant Propo -ErrorAction Stop } | Should -Not -Throw
                 Should -Invoke -ModuleName NerdFonts Install-Font -Times 1 -Exactly
                 $script:TestCapturedFiles | Should -Not -BeNullOrEmpty
                 $script:TestCapturedFiles | ForEach-Object { $_ | Should -BeLike '*NerdFontPropo*' }
