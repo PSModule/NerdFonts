@@ -42,7 +42,7 @@ Describe 'Module' {
 
         It 'Install-NerdFont - Continues when one queued download fails' {
             $originalFonts = InModuleScope NerdFonts { $script:NerdFonts }
-            $loadedFonts = Get-Content -Path (Join-Path $PSScriptRoot '..' 'src' 'FontsData.json') | ConvertFrom-Json
+            $loadedFonts = Get-Content -Path (Join-Path -Path $PSScriptRoot -ChildPath '../src/FontsData.json') | ConvertFrom-Json
             $goodFont = $loadedFonts | Where-Object Name -EQ 'Tinos' | Select-Object -First 1
 
             $testFonts = @(
@@ -100,7 +100,7 @@ Describe 'Module' {
 
         It 'Install-NerdFont - Installs a font with -Variant Mono' {
             $originalFonts = InModuleScope NerdFonts { $script:NerdFonts }
-            $loadedFonts = Get-Content -Path (Join-Path $PSScriptRoot '..' 'src' 'FontsData.json') | ConvertFrom-Json
+            $loadedFonts = Get-Content -Path (Join-Path -Path $PSScriptRoot -ChildPath '../src/FontsData.json') | ConvertFrom-Json
             $goodFont = $loadedFonts | Where-Object Name -EQ 'Hack' | Select-Object -First 1
             $testFonts = @($goodFont)
             InModuleScope NerdFonts -Parameters @{ fonts = $testFonts } {
@@ -133,7 +133,7 @@ Describe 'Module' {
 
         It 'Install-NerdFont - Installs a font with -Variant Standard' {
             $originalFonts = InModuleScope NerdFonts { $script:NerdFonts }
-            $loadedFonts = Get-Content -Path (Join-Path $PSScriptRoot '..' 'src' 'FontsData.json') | ConvertFrom-Json
+            $loadedFonts = Get-Content -Path (Join-Path -Path $PSScriptRoot -ChildPath '../src/FontsData.json') | ConvertFrom-Json
             $goodFont = $loadedFonts | Where-Object Name -EQ 'Hack' | Select-Object -First 1
             $testFonts = @($goodFont)
             InModuleScope NerdFonts -Parameters @{ fonts = $testFonts } {
@@ -170,7 +170,7 @@ Describe 'Module' {
 
         It 'Install-NerdFont - Installs a font with -Variant Propo' {
             $originalFonts = InModuleScope NerdFonts { $script:NerdFonts }
-            $loadedFonts = Get-Content -Path (Join-Path $PSScriptRoot '..' 'src' 'FontsData.json') | ConvertFrom-Json
+            $loadedFonts = Get-Content -Path (Join-Path -Path $PSScriptRoot -ChildPath '../src/FontsData.json') | ConvertFrom-Json
             $goodFont = $loadedFonts | Where-Object Name -EQ 'Hack' | Select-Object -First 1
             $testFonts = @($goodFont)
             InModuleScope NerdFonts -Parameters @{ fonts = $testFonts } {
@@ -237,7 +237,7 @@ Describe 'Module' {
 
         It 'Install-NerdFont - Falls back to download when cache read fails' {
             $originalFonts = InModuleScope NerdFonts { $script:NerdFonts }
-            $loadedFonts = Get-Content -Path (Join-Path $PSScriptRoot '..' 'src' 'FontsData.json') | ConvertFrom-Json
+            $loadedFonts = Get-Content -Path (Join-Path -Path $PSScriptRoot -ChildPath '../src/FontsData.json') | ConvertFrom-Json
             $goodFont = $loadedFonts | Where-Object Name -EQ 'Tinos' | Select-Object -First 1
             $fontName = $goodFont.Name
             $cacheRoot = if ($IsWindows) {
