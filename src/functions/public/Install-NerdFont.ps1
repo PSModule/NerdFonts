@@ -29,6 +29,16 @@ function Install-NerdFont {
 
         Installs all Nerd Fonts to the current user.
 
+        .EXAMPLE
+        Install-NerdFont -Name 'FiraCode' -Variant Mono
+
+        Installs only the monospace variant of the font 'FiraCode' to the current user.
+
+        .EXAMPLE
+        Install-NerdFont -All -Variant Mono
+
+        Installs only the monospace variant of all Nerd Fonts to the current user.
+
         .LINK
         https://psmodule.io/NerdFonts/Functions/Install-NerdFont
 
@@ -148,6 +158,7 @@ Please run the command again with elevated rights (Run as Administrator) or prov
         $httpClient.Timeout = [System.Threading.Timeout]::InfiniteTimeSpan
         $pending = [System.Collections.Generic.List[object]]::new()
         $readyToInstall = [System.Collections.Generic.List[object]]::new()
+        $downloadErrors = [System.Collections.Generic.List[string]]::new()
         $throttle = 8
 
         try {
@@ -224,7 +235,7 @@ Please run the command again with elevated rights (Run as Administrator) or prov
                         [System.IO.File]::WriteAllBytes($t.Q.DownloadPath, $bytes)
                         $readyToInstall.Add($t.Q)
                     } catch {
-                        Write-Error "[$($t.Q.Name)] - Download failed: $($_.Exception.Message)"
+                        $downloadErrors.Add("[$($t.Q.Name)] - Download failed: $($_.Exception.Message)")
                     }
                 }
             }
@@ -317,6 +328,10 @@ Please run the command again with elevated rights (Run as Administrator) or prov
                 Install-Font -Path $extractPath -Scope $Scope -Force:$Force
                 Remove-Item -Path $extractPath -Force -Recurse
             }
+        }
+
+        foreach ($err in $downloadErrors) {
+            Write-Error $err
         }
 
         Write-Verbose "Remove folder [$tempPath]"
