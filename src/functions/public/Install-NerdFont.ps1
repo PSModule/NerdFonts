@@ -255,6 +255,7 @@ Please run the command again with elevated rights (Run as Administrator) or prov
                 [System.IO.Compression.ZipFile]::ExtractToDirectory($downloadPath, $extractPath, $true)
 
                 if (-not $p.FromCache -and (Test-Path -LiteralPath $downloadPath)) {
+                    $tempCachePath = $null
                     try {
                         if (-not (Test-Path -LiteralPath $p.CacheTagDir)) {
                             $null = New-Item -ItemType Directory -Path $p.CacheTagDir -Force -ErrorAction Stop
