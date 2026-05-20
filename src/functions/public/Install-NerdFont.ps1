@@ -270,7 +270,7 @@ Please run the command again with elevated rights (Run as Administrator) or prov
                     }
                 }
 
-                Remove-Item -Path $downloadPath -Force
+                Remove-Item -LiteralPath $downloadPath -Force -ErrorAction SilentlyContinue
             }
 
             if ($Variant -ne 'All') {
@@ -326,7 +326,7 @@ Please run the command again with elevated rights (Run as Administrator) or prov
             Write-Verbose "[$fontName] - Install to [$Scope]"
             if ($PSCmdlet.ShouldProcess("[$fontName] to [$Scope]", 'Install font')) {
                 Install-Font -Path $extractPath -Scope $Scope -Force:$Force
-                Remove-Item -Path $extractPath -Force -Recurse
+                Remove-Item -LiteralPath $extractPath -Force -Recurse -ErrorAction SilentlyContinue
             }
         }
 
