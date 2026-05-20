@@ -264,7 +264,7 @@ Please run the command again with elevated rights (Run as Administrator) or prov
                         Move-Item -LiteralPath $tempCachePath -Destination $p.CachedFile -Force -ErrorAction Stop
                     } catch {
                         Write-Warning "[$fontName] - Download succeeded but cache write failed: $($_.Exception.Message)"
-                        if (Test-Path -LiteralPath $tempCachePath) {
+                        if ($tempCachePath -and (Test-Path -LiteralPath $tempCachePath)) {
                             Remove-Item -LiteralPath $tempCachePath -Force -ErrorAction SilentlyContinue
                         }
                     }
