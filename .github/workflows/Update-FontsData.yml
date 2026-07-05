@@ -7,19 +7,23 @@ on:
 
 permissions: {}
 
+concurrency:
+  group: Update-FontsData
+  cancel-in-progress: false
+
 jobs:
   Update-FontsData:
     name: Update-FontsData
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 0
           persist-credentials: false
 
       - name: Update-FontsData
-        uses: PSModule/GitHub-Script@v1
+        uses: PSModule/GitHub-Script@1ee97bbc652d19c38ae12f6e1e47e9d9fbd12d0a # v1.8.0
         with:
           ClientID: ${{ secrets.NERDFONTS_UPDATER_BOT_CLIENT_ID }}
           PrivateKey: ${{ secrets.NERDFONTS_UPDATER_BOT_PRIVATE_KEY }}
