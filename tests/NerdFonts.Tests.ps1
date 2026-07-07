@@ -1,4 +1,4 @@
-﻿#Requires -Modules @{ ModuleName = 'Pester'; RequiredVersion = '5.8.0'; GUID = 'a699dea5-2c73-4616-a270-1f7abb777e71' }
+﻿#Requires -Modules @{ ModuleName = 'Pester'; ModuleVersion = '6.0.0'; MaximumVersion = '6.999.999'; GUID = 'a699dea5-2c73-4616-a270-1f7abb777e71' }
 
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute(
     'PSUseDeclaredVarsMoreThanAssignments', '',
