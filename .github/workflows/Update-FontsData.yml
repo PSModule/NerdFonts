@@ -23,7 +23,7 @@ jobs:
           persist-credentials: false
 
       - name: Update-FontsData
-        uses: PSModule/GitHub-Script@1ee97bbc652d19c38ae12f6e1e47e9d9fbd12d0a # v1.8.0
+        uses: PSModule/GitHub-Script@8083ec1f733f00357ee4d0db0c6056686e483bc0 # v1.9.0
         with:
           ClientID: ${{ secrets.NERDFONTS_UPDATER_BOT_CLIENT_ID }}
           PrivateKey: ${{ secrets.NERDFONTS_UPDATER_BOT_PRIVATE_KEY }}
