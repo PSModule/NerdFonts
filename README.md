@@ -138,6 +138,15 @@ To uninstall a NerdFont for all users (requires elevated privileges):
 Uninstall-Font -Name 'FiraCode*' -Scope AllUsers
 ```
 
+## Documentation
+
+Every command has full reference documentation, generated from its comment-based help and published at [psmodule.io/NerdFonts](https://psmodule.io/NerdFonts/). Explore the commands and read detailed help directly from PowerShell:
+
+```powershell
+Get-Command -Module NerdFonts
+Get-Help -Name Install-NerdFont -Examples
+```
+
 ## Contributing
 
 Coder or not, you can contribute to the project! We welcome all contributions.
