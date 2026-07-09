@@ -1,17 +1,20 @@
 # NerdFonts
 
-NerdFonts is a PowerShell module for downloading and installing [Nerd Fonts](https://www.nerdfonts.com/) on Windows, macOS, and Linux. The module installs the fonts on your system; it does not bundle the fonts themselves.
+This is a PowerShell module for installing NerdFonts on your system. This module and repository does not contain the fonts themselves,
+but rather a way to install them on your system.
 
-🎉 Kudos to @ryanoasis and the Nerd Fonts community! 🎉 For issues with the fonts themselves, see the [Nerd Fonts](https://github.com/ryanoasis/nerd-fonts/) repository. All donations on this repository go to the Nerd Fonts project.
+🎉 Kudos to owner of NerdFonts, @ryanoasis and the rest of the NerdFonts community! 🎉
+For any issues with the fonts themselves, please refer to the [NerdFonts](https://github.com/ryanoasis/nerd-fonts/) repository.
+All donations on this repository will go to the NerdFonts project.
 
 ## Prerequisites
 
-- Cross-platform: supports the latest LTS version of [PowerShell](https://learn.microsoft.com/powershell/scripting/overview) on Windows, Linux, and macOS (not Windows PowerShell).
-- Depends on the [Fonts](https://psmodule.io/Fonts) module for system font management. It is installed automatically with this module.
+- This module is cross-platform and supports the latest LTS version of [PowerShell](https://learn.microsoft.com/en-us/powershell/scripting/overview) on Windows, Linux, and macOS. This is not to be confused with Windows PowerShell. Install PowerShell by following the [official installation guide](https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell).
+- This module depends on the [Fonts](https://psmodule.io/Fonts) module to manage fonts on the system. This will be installed automatically when installing the module.
 
 ## Installation
 
-Install the module from the PowerShell Gallery:
+To install the module simply run the following command in a PowerShell terminal.
 
 ```powershell
 Install-PSResource -Name NerdFonts
@@ -20,43 +23,145 @@ Import-Module -Name NerdFonts
 
 ## Usage
 
-Install a Nerd Font for the current user (the name supports tab completion):
+### Install a NerdFont
+
+To install a NerdFont on the system you can use the following command.
 
 ```powershell
-Install-NerdFont -Name 'FiraCode'
+Install-NerdFont -Name 'FiraCode' # Tab completion works on name
 ```
 
-Install every Nerd Font, or limit an install to a single variant such as the monospace family:
+To download the font from the NerdFonts repository and install it on the system, run the following command.
 
 ```powershell
-Install-NerdFont -All
+Install-NerdFont -Name 'FiraCode' -Scope AllUsers #Tab completion works on Scope too
+```
+
+To install only a specific variant from the archive, use the `-Variant` parameter. `Mono` is useful for terminal and editor setups where you only want the monospace family.
+
+```powershell
 Install-NerdFont -Name 'FiraCode' -Variant Mono
 ```
 
-Install for all users (requires an elevated session), and uninstall through the Fonts module:
+### Install all NerdFonts
+
+To install all NerdFonts on the system you can use the following command.
+
+This will download and install all NerdFonts to the current user.
 
 ```powershell
-Install-NerdFont -Name 'FiraCode' -Scope AllUsers
-Uninstall-Font -Name 'FiraCode*'
+Install-NerdFont -All
 ```
 
-## Behavior and caching
+To install all NerdFonts on the system for all users, run the following command.
+This requires the shell to run in an elevated context (sudo or run as administrator).
 
-- Already-installed fonts are skipped unless you pass `-Force`. Downloaded archives are cached per Nerd Fonts release, so repeated installs do not re-download the same ZIP.
-- Cache locations: `%LOCALAPPDATA%/PSModule/NerdFonts/cache` on Windows, and `$HOME/.cache/PSModule/NerdFonts` on macOS and Linux.
-- Font files do not embed a Nerd Fonts version, so there is no version check. Reinstall with `-Force` to get the version bundled with the module (`-Force` also bypasses the archive cache). To pick up newer font releases, update the module first with `Update-PSResource -Name NerdFonts`.
+```powershell
+Install-NerdFont -All -Scope AllUsers
+```
+
+You can combine `-All` with `-Variant` to limit what gets installed from each archive:
+
+```powershell
+Install-NerdFont -All -Variant Mono
+```
+
+### Check if a NerdFont is installed
+
+The [Fonts](https://psmodule.io/Fonts) module is installed automatically as a dependency and provides the
+[`Get-Font`](https://psmodule.io/Fonts/Functions/Get-Font/) command for querying installed fonts on the system.
+
+To check if a specific NerdFont is installed for the current user:
+
+```powershell
+Get-Font -Name 'FiraCode*'
+```
+
+To check across all users on the system:
+
+```powershell
+Get-Font -Name 'FiraCode*' -Scope AllUsers
+```
+
+If the command returns results, the font is installed. If it returns nothing, the font is not installed in that scope.
+
+When you run `Install-NerdFont` again without `-Force`, fonts that are already installed in the requested scope are skipped. Downloaded archives are also cached per Nerd Fonts release so retries and repeated installs do not need to fetch the same ZIP again.
+
+Cache locations:
+
+- Windows: `%LOCALAPPDATA%/PSModule/NerdFonts/cache`
+- macOS and Linux: `$HOME/.cache/PSModule/NerdFonts`
+
+You can inspect the active cache path in PowerShell with:
+
+```powershell
+if ($IsWindows) {
+    Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'PSModule/NerdFonts/cache'
+} else {
+    Join-Path $HOME '.cache/PSModule/NerdFonts'
+}
+```
+
+### Update an installed NerdFont
+
+Individual font files do not embed a NerdFonts release version, so there is no direct way to check whether an installed
+NerdFont is outdated. To ensure you have the version bundled with the module, reinstall the font using the `-Force` parameter:
+
+```powershell
+Install-NerdFont -Name 'FiraCode' -Force
+```
+
+If the font was originally installed for all users, update it with the matching scope (requires elevated privileges):
+
+```powershell
+Install-NerdFont -Name 'FiraCode' -Force -Scope AllUsers
+```
+
+This re-downloads and installs the font version bundled with your installed NerdFonts module, overwriting any existing
+files. `-Force` also bypasses the local archive cache so the font ZIP is fetched again before reinstalling. To pick up newer font releases, update the NerdFonts module first (`Update-PSResource -Name NerdFonts` if you
+installed via PSResourceGet, or `Update-Module -Name NerdFonts` if you installed via PowerShellGet).
+
+### Uninstall a NerdFont
+
+To uninstall a NerdFont, use the [`Uninstall-Font`](https://psmodule.io/Fonts/Functions/Uninstall-Font/) command
+from the [Fonts](https://psmodule.io/Fonts) module (installed automatically as a dependency).
+
+To uninstall a NerdFont from the current user:
+
+```powershell
+Uninstall-Font -Name 'FiraCode*' # Tab completion works on name
+```
+
+To uninstall a NerdFont for all users (requires elevated privileges):
+
+```powershell
+Uninstall-Font -Name 'FiraCode*' -Scope AllUsers
+```
 
 ## Documentation
 
-Documentation is published at [psmodule.io/NerdFonts](https://psmodule.io/NerdFonts/).
-
-Use PowerShell help and command discovery for module details:
+Every command has full reference documentation, generated from its comment-based help and published at [psmodule.io/NerdFonts](https://psmodule.io/NerdFonts/). Explore the commands and read detailed help directly from PowerShell:
 
 ```powershell
 Get-Command -Module NerdFonts
 Get-Help -Name Install-NerdFont -Examples
 ```
 
+## Contributing
+
+Coder or not, you can contribute to the project! We welcome all contributions.
+
+### For Users
+
+If you don't code, you still sit on valuable information that can make this project even better. If you experience that the
+product does unexpected things, throw errors or is missing functionality, you can help by submitting bugs and feature requests.
+Please see the issues tab on this project and submit a new issue that matches your needs.
+
+### For Developers
+
+If you do code, we'd love to have your contributions. Please read the [Contribution guidelines](CONTRIBUTING.md) for more information.
+You can either help by picking up an existing issue or submit a new one if you have an idea for a new feature or improvement.
+
 ## Links
 
-- Nerd Fonts: [GitHub](https://github.com/ryanoasis/nerd-fonts) | [Web](https://www.nerdfonts.com/)
+- NerdFonts | [GitHub](https://github.com/ryanoasis/nerd-fonts) | [Web](https://www.nerdfonts.com/)
