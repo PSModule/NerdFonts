@@ -16,9 +16,9 @@ Test:
 #       Skip: true
 #     MacOS:
 #       Skip: true
-# Build:
-#   Docs:
-#     Skip: true
+Build:
+  Site:
+    Skip: true
 
 Linter:
   env:
