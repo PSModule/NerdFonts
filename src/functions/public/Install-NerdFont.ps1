@@ -40,7 +40,7 @@ function Install-NerdFont {
         Installs only the monospace variant of all Nerd Fonts to the current user.
 
         .LINK
-        https://psmodule.io/NerdFonts/Functions/Install-NerdFont
+        https://psmodule.io/NerdFonts/Functions/Install-NerdFont/
 
         .NOTES
         More information about the NerdFonts can be found at:
