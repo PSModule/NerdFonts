@@ -279,6 +279,10 @@ Describe 'Module' {
                 Mock -ModuleName NerdFonts Copy-Item {
                     throw 'Simulated cache read failure'
                 } -ParameterFilter { $LiteralPath -and $LiteralPath -eq $cachedFile }
+                # Provide default mocks for the cache-write path so it does not fail
+                # when the cache-read filter no longer matches.
+                Mock -ModuleName NerdFonts Copy-Item {}
+                Mock -ModuleName NerdFonts Move-Item {}
 
                 # Should not throw — falls back to download
                 { Install-NerdFont -Name $fontName -Force:$false -ErrorAction Stop } | Should -Not -Throw
