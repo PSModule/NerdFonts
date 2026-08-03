@@ -28,4 +28,5 @@ permissions:
 jobs:
   Process-PSModule:
     uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@1653be8d36607d9535f600278c44789979477813 # v6.1.16
-    secrets: inherit
+    secrets:
+      APIKey: ${{ secrets.APIKey }}
