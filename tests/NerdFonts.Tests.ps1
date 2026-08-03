@@ -19,24 +19,6 @@
 [CmdletBinding()]
 param()
 
-BeforeAll {
-    # Import the module from the source tree so local tests exercise the code
-    # in the repository rather than an installed version.
-    $srcRoot = Join-Path -Path $PSScriptRoot -ChildPath '..' | Join-Path -ChildPath 'src'
-    $dynamicModule = New-Module -Name NerdFonts -ScriptBlock {
-        param($srcRoot)
-        $privateFiles = Get-ChildItem -Path (Join-Path -Path $srcRoot -ChildPath 'variables\private') -Filter '*.ps1' -File -Recurse |
-            Where-Object { $_.Name -ne 'NerdFonts.ps1' }
-        $publicFiles = Get-ChildItem -Path (Join-Path -Path $srcRoot -ChildPath 'functions\public') -Filter '*.ps1' -File
-        foreach ($file in $privateFiles) { . $file.FullName }
-        foreach ($file in $publicFiles) { . $file.FullName }
-        # NerdFonts.ps1 resolves FontsData.json relative to its own folder, which only
-        # works in the built module. Set the variable directly from the source tree.
-        $script:NerdFonts = Get-Content -Path (Join-Path -Path $srcRoot -ChildPath 'FontsData.json') | ConvertFrom-Json
-    } -ArgumentList $srcRoot
-    $dynamicModule | Import-Module -Force
-}
-
 Describe 'Module' {
     Context 'Function: Get-NerdFont' {
         It 'Returns all fonts' {
