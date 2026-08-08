@@ -96,7 +96,7 @@ function Measure-InstallScenario {
     )
 
     Write-Verbose "[$Iteration] Setup    : $Name"
-    & $Setup | Out-Null
+    $null = & $Setup
     [GC]::Collect()
     [GC]::WaitForPendingFinalizers()
 
@@ -104,7 +104,7 @@ function Measure-InstallScenario {
     $stopwatch = [Diagnostics.Stopwatch]::StartNew()
     $errorMessage = $null
     try {
-        & $Action | Out-Null
+        $null = & $Action
     } catch {
         $errorMessage = $_.ToString()
     }

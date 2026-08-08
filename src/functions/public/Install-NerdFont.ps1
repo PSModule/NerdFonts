@@ -258,7 +258,7 @@ Please run the command again with elevated rights (Run as Administrator) or prov
 
                 foreach ($task in $tasks) {
                     try {
-                        Receive-Job -Job $task.Job -Wait -AutoRemoveJob -ErrorAction Stop | Out-Null
+                        $null = Receive-Job -Job $task.Job -Wait -AutoRemoveJob -ErrorAction Stop
                         $readyToInstall.Add($task.QueuedDownload)
                     } catch {
                         $downloadErrors.Add("[$($task.QueuedDownload.Name)] - Download failed: $($_.Exception.Message)")
