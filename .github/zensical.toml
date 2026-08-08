@@ -1,0 +1,71 @@
+[project]
+site_name = "-{{ REPO_NAME }}-"
+repo_name = "-{{ REPO_OWNER }}-/-{{ REPO_NAME }}-"
+repo_url = "https://github.com/-{{ REPO_OWNER }}-/-{{ REPO_NAME }}-"
+
+[project.theme]
+variant = "classic"
+language = "en"
+font.text = "Roboto"
+font.code = "Sono"
+logo = "Assets/icon.png"
+favicon = "Assets/icon.png"
+features = [
+    "navigation.instant",
+    "navigation.instant.progress",
+    "navigation.indexes",
+    "navigation.top",
+    "navigation.tracking",
+    "navigation.expand",
+    "search.suggest",
+    "search.highlight",
+    "content.code.copy"
+]
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme)"
+toggle.icon = "material/link"
+toggle.name = "Switch to dark mode"
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme: dark)"
+scheme = "slate"
+primary = "black"
+accent = "green"
+toggle.icon = "material/toggle-switch-off-outline"
+toggle.name = "Switch to light mode"
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme: light)"
+scheme = "default"
+primary = "indigo"
+accent = "green"
+toggle.icon = "material/toggle-switch"
+toggle.name = "Switch to system preference"
+
+[project.theme.icon]
+repo = "material/github"
+
+[project.markdown_extensions.toc]
+permalink = true
+
+[project.markdown_extensions.attr_list]
+[project.markdown_extensions.admonition]
+[project.markdown_extensions.md_in_html]
+[project.markdown_extensions."pymdownx.details"]
+[project.markdown_extensions."pymdownx.superfences"]
+
+[[project.extra.social]]
+icon = "fontawesome/brands/discord"
+link = "https://discord.gg/jedJWCPAhD"
+name = "-{{ REPO_OWNER }}- on Discord"
+
+[[project.extra.social]]
+icon = "fontawesome/brands/github"
+link = "https://github.com/-{{ REPO_OWNER }}-/"
+name = "-{{ REPO_OWNER }}- on GitHub"
+
+[project.extra.consent]
+title = "Cookie consent"
+description = "We use cookies to recognize your repeated visits and preferences, as well as to measure the effectiveness of our documentation and whether users find what they're searching for. With your consent, you're helping us to make our documentation better."
+actions = ["accept", "reject"]
