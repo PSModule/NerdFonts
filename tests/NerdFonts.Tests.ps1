@@ -98,6 +98,35 @@ Describe 'Module' {
             }
         }
 
+        It 'Start-NerdFontDownload - Streams a complete archive with .NET' {
+            $loadedFonts = Get-Content -Path (Join-Path -Path $PSScriptRoot -ChildPath '../src/FontsData.json') | ConvertFrom-Json
+            $goodFont = $loadedFonts | Where-Object Name -EQ 'Tinos' | Select-Object -First 1
+            $downloadPath = Join-Path -Path $TestDrive -ChildPath 'Tinos.zip'
+
+            InModuleScope NerdFonts -Parameters @{ url = $goodFont.URL; path = $downloadPath } {
+                param($url, $path)
+                Start-NerdFontDownload -Uri $url -DestinationPath $path -Wait
+            }
+
+            Test-Path -LiteralPath $downloadPath -PathType Leaf | Should -BeTrue
+            $archive = [System.IO.Compression.ZipFile]::OpenRead($downloadPath)
+            $archive.Entries.Count | Should -BeGreaterThan 0
+            $archive.Dispose()
+        }
+
+        It 'Start-NerdFontDownload - Fails a missing archive without retrying' {
+            $downloadPath = Join-Path -Path $TestDrive -ChildPath 'missing.zip'
+            $missingUrl = 'https://github.com/ryanoasis/nerd-fonts/releases/download/v3.5.0/does-not-exist.zip'
+
+            {
+                InModuleScope NerdFonts -Parameters @{ url = $missingUrl; path = $downloadPath } {
+                    param($url, $path)
+                    Start-NerdFontDownload -Uri $url -DestinationPath $path -Wait
+                }
+            } | Should -Throw '*HTTP status code [[]404[]]*'
+            Test-Path -LiteralPath $downloadPath | Should -BeFalse
+        }
+
         It 'Install-NerdFont - Continues when one downloaded archive cannot be extracted' {
             $originalFonts = InModuleScope NerdFonts { $script:NerdFonts }
             $validArchivePath = Join-Path -Path $TestDrive -ChildPath 'valid-archive.zip'

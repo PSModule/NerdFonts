@@ -14,7 +14,10 @@ function Start-NerdFontDownload {
         [uri] $Uri,
 
         [Parameter(Mandatory)]
-        [string] $DestinationPath
+        [string] $DestinationPath,
+
+        [Parameter()]
+        [switch] $Wait
     )
 
     $downloadScript = {
@@ -98,6 +101,11 @@ function Start-NerdFontDownload {
                 Remove-Item -LiteralPath $temporaryPath -Force -ErrorAction SilentlyContinue
             }
         }
+    }
+
+    if ($Wait) {
+        $null = & $downloadScript $Uri $DestinationPath
+        return
     }
 
     return Start-ThreadJob -ScriptBlock $downloadScript -ArgumentList $Uri, $DestinationPath
