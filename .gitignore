@@ -18,3 +18,6 @@ outputs/*
 bin/
 obj/
 libs/
+
+# Generated performance measurements
+scripts/perf-results.jsonl

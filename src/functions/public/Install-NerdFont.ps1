@@ -96,10 +96,6 @@ Please run the command again with elevated rights (Run as Administrator) or prov
 
         $guid = (New-Guid).Guid
         $tempPath = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath "NerdFonts-$guid"
-        if (-not (Test-Path -Path $tempPath -PathType Container)) {
-            Write-Verbose "Create folder [$tempPath]"
-            $null = New-Item -Path $tempPath -ItemType Directory
-        }
     }
 
     process {
@@ -121,11 +117,7 @@ Please run the command again with elevated rights (Run as Administrator) or prov
     end {
         Write-Verbose "[$Scope] - Installing [$($nerdFontsToInstall.Count)] fonts"
 
-        $cacheRoot = if ($IsWindows) {
-            Join-Path -Path ([Environment]::GetFolderPath('LocalApplicationData')) -ChildPath 'PSModule/NerdFonts/cache'
-        } else {
-            Join-Path -Path $HOME -ChildPath '.cache/PSModule/NerdFonts'
-        }
+        $cacheRoot = Get-NerdFontCacheRoot
 
         $installedFamilies = $null
         if (-not $Force) {
@@ -142,24 +134,47 @@ Please run the command again with elevated rights (Run as Administrator) or prov
             if (-not $Force -and $installedFamilies) {
                 $alreadyInstalled = $false
                 foreach ($family in $installedFamilies) {
-                    if ($family -like "$fontName Nerd Font*") { $alreadyInstalled = $true; break }
+                    $normalizedFamily = $family -replace '[\s_-]', ''
+                    $normalizedFontName = $fontName -replace '[\s_-]', ''
+                    if ($normalizedFamily -notlike "${normalizedFontName}NerdFont*") {
+                        continue
+                    }
+
+                    $matchesVariant = switch ($Variant) {
+                        'All' {
+                            $true
+                        }
+                        'Mono' {
+                            $normalizedFamily -like '*NerdFontMono*'
+                        }
+                        'Propo' {
+                            $normalizedFamily -like '*NerdFontPropo*'
+                        }
+                        'Standard' {
+                            $normalizedFamily -notlike '*NerdFontMono*' -and
+                            $normalizedFamily -notlike '*NerdFontPropo*'
+                        }
+                    }
+
+                    if ($matchesVariant) {
+                        $alreadyInstalled = $true
+                        break
+                    }
                 }
                 if ($alreadyInstalled) {
-                    Write-Verbose "[$fontName] - already installed, skipping"
+                    Write-Verbose "[$fontName] - requested variant [$Variant] already installed, skipping"
                     continue
                 }
             }
             $toProcess.Add($nerdFont)
         }
 
-        Add-Type -AssemblyName System.Net.Http -ErrorAction SilentlyContinue
-        $httpClient = [System.Net.Http.HttpClient]::new()
-        # Keep request lifetime unbounded for large archives on slower links.
-        $httpClient.Timeout = [System.Threading.Timeout]::InfiniteTimeSpan
-        $pending = [System.Collections.Generic.List[object]]::new()
+        $pendingDownloads = [System.Collections.Generic.List[object]]::new()
         $readyToInstall = [System.Collections.Generic.List[object]]::new()
         $downloadErrors = [System.Collections.Generic.List[string]]::new()
-        $throttle = 8
+        $processorCount = [System.Environment]::ProcessorCount
+        $httpClient = $null
+        $runspacePool = $null
 
         try {
             foreach ($nerdFont in $toProcess) {
@@ -178,38 +193,42 @@ Please run the command again with elevated rights (Run as Administrator) or prov
 
                 if ((Test-Path -LiteralPath $cachedFile) -and -not $Force) {
                     Write-Verbose "[$fontName] - Cache hit at [$cachedFile]"
-                    $cacheHitSuccess = $false
-                    try {
-                        Copy-Item -LiteralPath $cachedFile -Destination $downloadPath -Force -ErrorAction Stop
-                        $cacheHitSuccess = $true
-                    } catch {
-                        Write-Warning "[$fontName] - Cache read failed, falling back to download: $($_.Exception.Message)"
-                    }
-                    if ($cacheHitSuccess) {
-                        $item = [pscustomobject]@{
-                            Name         = $fontName
-                            URL          = $URL
-                            DownloadPath = $downloadPath
-                            CachedFile   = $cachedFile
-                            CacheTagDir  = $cacheTagDir
-                            FromCache    = $true
+                    $cacheCopyTarget = "[$fontName] cache archive to [$downloadPath]"
+                    if ($PSCmdlet.ShouldProcess($cacheCopyTarget, 'Copy cached archive')) {
+                        if (-not (Test-Path -LiteralPath $tempPath)) {
+                            Write-Verbose "Create folder [$tempPath]"
+                            $null = New-Item -Path $tempPath -ItemType Directory -ErrorAction Stop
                         }
-                        $pending.Add($item)
-                        $readyToInstall.Add($item)
+
+                        try {
+                            Copy-Item -LiteralPath $cachedFile -Destination $downloadPath -Force -ErrorAction Stop
+                            $cachedDownload = [pscustomobject]@{
+                                Name         = $fontName
+                                URL          = $URL
+                                DownloadPath = $downloadPath
+                                CachedFile   = $cachedFile
+                                CacheTagDir  = $cacheTagDir
+                                FromCache    = $true
+                            }
+                            $readyToInstall.Add($cachedDownload)
+                            continue
+                        } catch {
+                            Write-Warning "[$fontName] - Cache read failed, falling back to download: $($_.Exception.Message)"
+                        }
                     } else {
-                        $item = [pscustomobject]@{
-                            Name         = $fontName
-                            URL          = $URL
-                            DownloadPath = $downloadPath
-                            CachedFile   = $cachedFile
-                            CacheTagDir  = $cacheTagDir
-                            FromCache    = $false
-                        }
-                        $pending.Add($item)
+                        continue
                     }
-                } else {
+
+                }
+
+                if ($PSCmdlet.ShouldProcess("[$fontName] from [$URL]", 'Download archive')) {
+                    if (-not (Test-Path -LiteralPath $tempPath)) {
+                        Write-Verbose "Create folder [$tempPath]"
+                        $null = New-Item -Path $tempPath -ItemType Directory -ErrorAction Stop
+                    }
+
                     Write-Verbose "[$fontName] - Queue download to [$downloadPath]"
-                    $item = [pscustomobject]@{
+                    $queuedDownload = [pscustomobject]@{
                         Name         = $fontName
                         URL          = $URL
                         DownloadPath = $downloadPath
@@ -217,30 +236,69 @@ Please run the command again with elevated rights (Run as Administrator) or prov
                         CacheTagDir  = $cacheTagDir
                         FromCache    = $false
                     }
-                    $pending.Add($item)
+                    $pendingDownloads.Add($queuedDownload)
                 }
             }
 
-            $toDownload = @($pending | Where-Object { -not $_.FromCache })
-            for ($i = 0; $i -lt $toDownload.Count; $i += $throttle) {
-                $end = [Math]::Min($i + $throttle - 1, $toDownload.Count - 1)
-                $chunk = $toDownload[$i..$end]
-                $tasks = @()
-                foreach ($q in $chunk) {
-                    $tasks += [pscustomobject]@{ Q = $q; Task = $httpClient.GetByteArrayAsync($q.URL) }
-                }
-                foreach ($t in $tasks) {
+            $toDownload = @($pendingDownloads)
+            if ($toDownload.Count -gt 0) {
+                $httpClient = New-NerdFontHttpClient -MaximumConnections $processorCount
+
+                if ($toDownload.Count -eq 1) {
+                    $queuedDownload = $toDownload[0]
+                    $downloadParams = @{
+                        HttpClient      = $httpClient
+                        Uri             = $queuedDownload.URL
+                        DestinationPath = $queuedDownload.DownloadPath
+                        Wait            = $true
+                    }
                     try {
-                        $bytes = $t.Task.GetAwaiter().GetResult()
-                        [System.IO.File]::WriteAllBytes($t.Q.DownloadPath, $bytes)
-                        $readyToInstall.Add($t.Q)
+                        Start-NerdFontDownload @downloadParams
+                        $readyToInstall.Add($queuedDownload)
                     } catch {
-                        $downloadErrors.Add("[$($t.Q.Name)] - Download failed: $($_.Exception.Message)")
+                        $downloadErrors.Add("[$($queuedDownload.Name)] - Download failed: $($_.Exception.Message)")
+                    }
+                } else {
+                    $maximumRunspaces = [Math]::Min($processorCount, $toDownload.Count)
+                    $runspacePool = New-NerdFontDownloadRunspacePool -MaximumRunspaces $maximumRunspaces
+                    $downloadOperations = [System.Collections.Generic.List[object]]::new()
+
+                    foreach ($queuedDownload in $toDownload) {
+                        $downloadParams = @{
+                            HttpClient      = $httpClient
+                            RunspacePool    = $runspacePool
+                            Uri             = $queuedDownload.URL
+                            DestinationPath = $queuedDownload.DownloadPath
+                        }
+                        try {
+                            $downloadOperation = Start-NerdFontDownload @downloadParams
+                            $downloadOperations.Add([pscustomobject]@{
+                                    QueuedDownload = $queuedDownload
+                                    Operation      = $downloadOperation
+                                })
+                        } catch {
+                            $downloadErrors.Add("[$($queuedDownload.Name)] - Download failed: $($_.Exception.Message)")
+                        }
+                    }
+
+                    foreach ($downloadOperation in $downloadOperations) {
+                        try {
+                            Receive-NerdFontDownload -Operation $downloadOperation.Operation
+                            $readyToInstall.Add($downloadOperation.QueuedDownload)
+                        } catch {
+                            $downloadErrors.Add("[$($downloadOperation.QueuedDownload.Name)] - Download failed: $($_.Exception.Message)")
+                        }
                     }
                 }
             }
         } finally {
-            $httpClient.Dispose()
+            if ($runspacePool) {
+                $runspacePool.Close()
+                $runspacePool.Dispose()
+            }
+            if ($httpClient) {
+                $httpClient.Dispose()
+            }
         }
 
         foreach ($p in $readyToInstall) {
@@ -249,10 +307,17 @@ Please run the command again with elevated rights (Run as Administrator) or prov
             $extractPath = Join-Path -Path $tempPath -ChildPath $fontName
             Write-Verbose "[$fontName] - Extract to [$extractPath]"
             if ($PSCmdlet.ShouldProcess("[$fontName] to [$extractPath]", 'Extract')) {
-                if (-not (Test-Path -LiteralPath $extractPath)) {
-                    $null = New-Item -ItemType Directory -Path $extractPath
+                try {
+                    if (-not (Test-Path -LiteralPath $extractPath)) {
+                        $null = New-Item -ItemType Directory -Path $extractPath -ErrorAction Stop
+                    }
+                    [System.IO.Compression.ZipFile]::ExtractToDirectory($downloadPath, $extractPath, $true)
+                } catch {
+                    Remove-Item -LiteralPath $extractPath -Force -Recurse -ErrorAction SilentlyContinue
+                    Remove-Item -LiteralPath $downloadPath -Force -ErrorAction SilentlyContinue
+                    Write-Error "[$fontName] - Extract failed: $($_.Exception.Message)"
+                    continue
                 }
-                [System.IO.Compression.ZipFile]::ExtractToDirectory($downloadPath, $extractPath, $true)
 
                 if (-not $p.FromCache -and (Test-Path -LiteralPath $downloadPath)) {
                     $tempCachePath = $null
@@ -272,62 +337,64 @@ Please run the command again with elevated rights (Run as Administrator) or prov
                 }
 
                 Remove-Item -LiteralPath $downloadPath -Force -ErrorAction SilentlyContinue
-            }
 
-            if ($Variant -ne 'All') {
-                $allFiles = Get-ChildItem -Path $extractPath -Recurse -File -Include '*.ttf', '*.otf'
-                $keep = switch ($Variant) {
-                    'Mono' {
-                        $allFiles | Where-Object { $_.Name -like '*NerdFontMono*' }
-                    }
-                    'Propo' {
-                        $allFiles | Where-Object { $_.Name -like '*NerdFontPropo*' }
-                    }
-                    'Standard' {
-                        $allFiles | Where-Object {
-                            $_.Name -like '*NerdFont*' -and
-                            $_.Name -notlike '*NerdFontMono*' -and
-                            $_.Name -notlike '*NerdFontPropo*'
+                if ($Variant -ne 'All') {
+                    $allFiles = Get-ChildItem -Path $extractPath -Recurse -File -Include '*.ttf', '*.otf'
+                    $keep = switch ($Variant) {
+                        'Mono' {
+                            $allFiles | Where-Object { $_.Name -like '*NerdFontMono*' }
+                        }
+                        'Propo' {
+                            $allFiles | Where-Object { $_.Name -like '*NerdFontPropo*' }
+                        }
+                        'Standard' {
+                            $allFiles | Where-Object {
+                                $_.Name -like '*NerdFont*' -and
+                                $_.Name -notlike '*NerdFontMono*' -and
+                                $_.Name -notlike '*NerdFontPropo*'
+                            }
                         }
                     }
-                }
-                $keepNames = [string[]]@($keep.FullName)
-                $keepSet = [System.Collections.Generic.HashSet[string]]::new(
-                    $keepNames,
-                    [System.StringComparer]::OrdinalIgnoreCase
-                )
-                $removed = 0
-                foreach ($f in $allFiles) {
-                    if (-not $keepSet.Contains($f.FullName)) {
-                        Remove-Item -LiteralPath $f.FullName -Force -ErrorAction SilentlyContinue
-                        $removed++
+                    $keepNames = [string[]]@($keep.FullName)
+                    $keepSet = [System.Collections.Generic.HashSet[string]]::new(
+                        $keepNames,
+                        [System.StringComparer]::OrdinalIgnoreCase
+                    )
+                    $removed = 0
+                    foreach ($file in $allFiles) {
+                        if (-not $keepSet.Contains($file.FullName)) {
+                            Remove-Item -LiteralPath $file.FullName -Force -ErrorAction SilentlyContinue
+                            $removed++
+                        }
                     }
+                    Write-Verbose "[$fontName] - Variant '$Variant': kept $($keep.Count), removed $removed"
                 }
-                Write-Verbose "[$fontName] - Variant '$Variant': kept $($keep.Count), removed $removed"
-            }
 
-            # Nerd Fonts archives sometimes contain duplicate matching files in
-            # compatibility subfolders. Keep a single file per filename.
-            $remaining = @(Get-ChildItem -Path $extractPath -Recurse -File -Include '*.ttf', '*.otf')
-            $preferred = $remaining | Sort-Object -Property @(
-                @{ Expression = { if ($_.FullName -match '(?i)[\\/]Windows Compatible[\\/]') { 1 } else { 0 } } }
-                @{ Expression = { $_.FullName.Length } }
-            )
-            $seenFileNames = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
-            $duplicateRemoved = 0
-            foreach ($file in $preferred) {
-                if ($seenFileNames.Add($file.Name)) { continue }
-                Remove-Item -LiteralPath $file.FullName -Force -ErrorAction SilentlyContinue
-                $duplicateRemoved++
-            }
-            if ($duplicateRemoved -gt 0) {
-                Write-Verbose "[$fontName] - Deduplicated $duplicateRemoved file(s)"
-            }
+                # Nerd Fonts archives sometimes contain duplicate matching files in
+                # compatibility subfolders. Keep a single file per filename.
+                $remaining = @(Get-ChildItem -Path $extractPath -Recurse -File -Include '*.ttf', '*.otf')
+                $preferred = $remaining | Sort-Object -Property @(
+                    @{ Expression = { if ($_.FullName -match '(?i)[\\/]Windows Compatible[\\/]') { 1 } else { 0 } } }
+                    @{ Expression = { $_.FullName.Length } }
+                )
+                $seenFileNames = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+                $duplicateRemoved = 0
+                foreach ($file in $preferred) {
+                    if ($seenFileNames.Add($file.Name)) {
+                        continue
+                    }
+                    Remove-Item -LiteralPath $file.FullName -Force -ErrorAction SilentlyContinue
+                    $duplicateRemoved++
+                }
+                if ($duplicateRemoved -gt 0) {
+                    Write-Verbose "[$fontName] - Deduplicated $duplicateRemoved file(s)"
+                }
 
-            Write-Verbose "[$fontName] - Install to [$Scope]"
-            if ($PSCmdlet.ShouldProcess("[$fontName] to [$Scope]", 'Install font')) {
-                Install-Font -Path $extractPath -Scope $Scope -Force:$Force
-                Remove-Item -LiteralPath $extractPath -Force -Recurse -ErrorAction SilentlyContinue
+                Write-Verbose "[$fontName] - Install to [$Scope]"
+                if ($PSCmdlet.ShouldProcess("[$fontName] to [$Scope]", 'Install font')) {
+                    Install-Font -Path $extractPath -Scope $Scope -Force:$Force
+                    Remove-Item -LiteralPath $extractPath -Force -Recurse -ErrorAction SilentlyContinue
+                }
             }
         }
 
