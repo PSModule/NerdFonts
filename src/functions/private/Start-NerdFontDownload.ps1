@@ -7,7 +7,6 @@ function Start-NerdFontDownload {
         'PSUseShouldProcessForStateChangingFunctions', '',
         Justification = 'Install-NerdFont confirms the download operation before starting a job.'
     )]
-    [OutputType([pscustomobject])]
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)]
