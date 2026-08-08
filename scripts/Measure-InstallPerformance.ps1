@@ -145,7 +145,7 @@ $results.Add((Measure-InstallScenario @subsetScenario))
 
 $alreadyInstalledScenario = @{
     Name        = 'Subset-AlreadyInstalled'
-    Setup       = { Install-NerdFont -Name $Subset -Scope CurrentUser -Force }
+    Setup       = { Install-NerdFont -Name $Subset -Scope CurrentUser }
     Action      = { Install-NerdFont -Name $Subset -Scope CurrentUser }
     ResultsPath = $ResultsPath
 }
