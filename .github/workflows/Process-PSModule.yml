@@ -27,6 +27,6 @@ permissions:
 
 jobs:
   Process-PSModule:
-    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@1653be8d36607d9535f600278c44789979477813 # v6.1.16
+    uses: PSModule/Process-PSModule/.github/workflows/workflow.yml@525164d5585a1ca79a588e34d5ff38d402cf2ee3 # fix-wildcard-maximumversion
     secrets:
       APIKey: ${{ secrets.APIKey }}
