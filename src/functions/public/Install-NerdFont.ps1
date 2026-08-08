@@ -172,8 +172,9 @@ Please run the command again with elevated rights (Run as Administrator) or prov
         $pendingDownloads = [System.Collections.Generic.List[object]]::new()
         $readyToInstall = [System.Collections.Generic.List[object]]::new()
         $downloadErrors = [System.Collections.Generic.List[string]]::new()
-        $activeDownloadJobs = [System.Collections.Generic.List[object]]::new()
-        $throttle = 8
+        $processorCount = [System.Environment]::ProcessorCount
+        $httpClient = $null
+        $runspacePool = $null
 
         try {
             foreach ($nerdFont in $toProcess) {
@@ -240,36 +241,63 @@ Please run the command again with elevated rights (Run as Administrator) or prov
             }
 
             $toDownload = @($pendingDownloads)
-            for ($i = 0; $i -lt $toDownload.Count; $i += $throttle) {
-                $end = [Math]::Min($i + $throttle - 1, $toDownload.Count - 1)
-                $chunk = $toDownload[$i..$end]
-                $tasks = foreach ($queuedDownload in $chunk) {
+            if ($toDownload.Count -gt 0) {
+                $httpClient = New-NerdFontHttpClient -MaximumConnections $processorCount
+
+                if ($toDownload.Count -eq 1) {
+                    $queuedDownload = $toDownload[0]
                     $downloadParams = @{
+                        HttpClient      = $httpClient
                         Uri             = $queuedDownload.URL
                         DestinationPath = $queuedDownload.DownloadPath
+                        Wait            = $true
                     }
-                    $downloadJob = Start-NerdFontDownload @downloadParams
-                    $activeDownloadJobs.Add($downloadJob)
-                    [pscustomobject]@{
-                        QueuedDownload = $queuedDownload
-                        Job            = $downloadJob
-                    }
-                }
-
-                foreach ($task in $tasks) {
                     try {
-                        $null = Receive-Job -Job $task.Job -Wait -AutoRemoveJob -ErrorAction Stop
-                        $readyToInstall.Add($task.QueuedDownload)
+                        Start-NerdFontDownload @downloadParams
+                        $readyToInstall.Add($queuedDownload)
                     } catch {
-                        $downloadErrors.Add("[$($task.QueuedDownload.Name)] - Download failed: $($_.Exception.Message)")
-                    } finally {
-                        $null = $activeDownloadJobs.Remove($task.Job)
+                        $downloadErrors.Add("[$($queuedDownload.Name)] - Download failed: $($_.Exception.Message)")
+                    }
+                } else {
+                    $maximumRunspaces = [Math]::Min($processorCount, $toDownload.Count)
+                    $runspacePool = New-NerdFontDownloadRunspacePool -MaximumRunspaces $maximumRunspaces
+                    $downloadOperations = [System.Collections.Generic.List[object]]::new()
+
+                    foreach ($queuedDownload in $toDownload) {
+                        $downloadParams = @{
+                            HttpClient      = $httpClient
+                            RunspacePool    = $runspacePool
+                            Uri             = $queuedDownload.URL
+                            DestinationPath = $queuedDownload.DownloadPath
+                        }
+                        try {
+                            $downloadOperation = Start-NerdFontDownload @downloadParams
+                            $downloadOperations.Add([pscustomobject]@{
+                                    QueuedDownload = $queuedDownload
+                                    Operation      = $downloadOperation
+                                })
+                        } catch {
+                            $downloadErrors.Add("[$($queuedDownload.Name)] - Download failed: $($_.Exception.Message)")
+                        }
+                    }
+
+                    foreach ($downloadOperation in $downloadOperations) {
+                        try {
+                            Receive-NerdFontDownload -Operation $downloadOperation.Operation
+                            $readyToInstall.Add($downloadOperation.QueuedDownload)
+                        } catch {
+                            $downloadErrors.Add("[$($downloadOperation.QueuedDownload.Name)] - Download failed: $($_.Exception.Message)")
+                        }
                     }
                 }
             }
         } finally {
-            foreach ($downloadJob in $activeDownloadJobs) {
-                Remove-Job -Job $downloadJob -Force -ErrorAction SilentlyContinue
+            if ($runspacePool) {
+                $runspacePool.Close()
+                $runspacePool.Dispose()
+            }
+            if ($httpClient) {
+                $httpClient.Dispose()
             }
         }
 

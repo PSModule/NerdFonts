@@ -17,6 +17,9 @@ function Invoke-NerdFontDownload {
         [string] $DestinationPath,
 
         [Parameter()]
+        [System.Net.Http.HttpClient] $HttpClient,
+
+        [Parameter()]
         [ValidateRange(1, 3600)]
         [int] $AttemptTimeoutSeconds = 900
     )
@@ -24,8 +27,10 @@ function Invoke-NerdFontDownload {
     $maximumRetryCount = 5
     $retryIntervalSeconds = 5
     $temporaryPath = "$DestinationPath.$PID.tmp"
-    $httpClient = [System.Net.Http.HttpClient]::new()
-    $httpClient.Timeout = [System.Threading.Timeout]::InfiniteTimeSpan
+    $ownsHttpClient = $null -eq $HttpClient
+    if ($ownsHttpClient) {
+        $HttpClient = New-NerdFontHttpClient -MaximumConnections 1
+    }
 
     try {
         for ($attempt = 0; $attempt -le $maximumRetryCount; $attempt++) {
@@ -99,7 +104,9 @@ function Invoke-NerdFontDownload {
             }
         }
     } finally {
-        $httpClient.Dispose()
+        if ($ownsHttpClient) {
+            $HttpClient.Dispose()
+        }
         if (Test-Path -LiteralPath $temporaryPath) {
             Remove-Item -LiteralPath $temporaryPath -Force -ErrorAction SilentlyContinue
         }
