@@ -44,7 +44,11 @@ function Remove-NerdFont {
     )
 
     foreach ($name in $Names) {
-        $families = Get-Font -Scope CurrentUser | Where-Object { $_.Name -like "$name*" }
+        $normalizedName = $name -replace '[\s_-]', ''
+        $families = Get-Font -Scope CurrentUser | Where-Object {
+            $normalizedFamily = $_.Name -replace '[\s_-]', ''
+            $normalizedFamily -like "${normalizedName}NerdFont*"
+        }
         foreach ($family in $families) {
             if ($PSCmdlet.ShouldProcess($family.Name, 'Uninstall font')) {
                 Uninstall-Font -Name $family.Name -Scope CurrentUser -ErrorAction Stop
