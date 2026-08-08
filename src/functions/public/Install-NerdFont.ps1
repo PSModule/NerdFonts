@@ -169,13 +169,10 @@ Please run the command again with elevated rights (Run as Administrator) or prov
             $toProcess.Add($nerdFont)
         }
 
-        Add-Type -AssemblyName System.Net.Http -ErrorAction SilentlyContinue
-        $httpClient = [System.Net.Http.HttpClient]::new()
-        # Keep request lifetime unbounded for large archives on slower links.
-        $httpClient.Timeout = [System.Threading.Timeout]::InfiniteTimeSpan
         $pendingDownloads = [System.Collections.Generic.List[object]]::new()
         $readyToInstall = [System.Collections.Generic.List[object]]::new()
         $downloadErrors = [System.Collections.Generic.List[string]]::new()
+        $activeDownloadJobs = [System.Collections.Generic.List[object]]::new()
         $throttle = 8
 
         try {
@@ -248,27 +245,32 @@ Please run the command again with elevated rights (Run as Administrator) or prov
                 $chunk = $toDownload[$i..$end]
                 $tasks = foreach ($queuedDownload in $chunk) {
                     $downloadParams = @{
-                        HttpClient      = $httpClient
                         Uri             = $queuedDownload.URL
                         DestinationPath = $queuedDownload.DownloadPath
                     }
+                    $downloadJob = Start-NerdFontDownload @downloadParams
+                    $activeDownloadJobs.Add($downloadJob)
                     [pscustomobject]@{
                         QueuedDownload = $queuedDownload
-                        Task           = Invoke-NerdFontDownload @downloadParams
+                        Job            = $downloadJob
                     }
                 }
 
                 foreach ($task in $tasks) {
                     try {
-                        $task.Task.GetAwaiter().GetResult()
+                        Receive-Job -Job $task.Job -Wait -AutoRemoveJob -ErrorAction Stop | Out-Null
                         $readyToInstall.Add($task.QueuedDownload)
                     } catch {
                         $downloadErrors.Add("[$($task.QueuedDownload.Name)] - Download failed: $($_.Exception.Message)")
+                    } finally {
+                        $null = $activeDownloadJobs.Remove($task.Job)
                     }
                 }
             }
         } finally {
-            $httpClient.Dispose()
+            foreach ($downloadJob in $activeDownloadJobs) {
+                Remove-Job -Job $downloadJob -Force -ErrorAction SilentlyContinue
+            }
         }
 
         foreach ($p in $readyToInstall) {
