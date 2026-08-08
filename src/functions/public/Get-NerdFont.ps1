@@ -22,7 +22,7 @@
         Get the NerdFont with the name ending with 'Code'.
 
         .LINK
-        https://psmodule.io/NerdFonts/Functions/Get-NerdFont
+        https://psmodule.io/NerdFonts/Functions/Get-NerdFont/
 
         .NOTES
         More information about the NerdFonts can be found at:

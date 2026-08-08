@@ -1,4 +1,4 @@
-﻿#Requires -Modules @{ ModuleName = 'Pester'; RequiredVersion = '5.8.0'; GUID = 'a699dea5-2c73-4616-a270-1f7abb777e71' }
+﻿#Requires -Modules @{ ModuleName = 'Pester'; ModuleVersion = '6.0.0'; MaximumVersion = '6.*' }
 
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute(
     'PSUseDeclaredVarsMoreThanAssignments', '',
@@ -265,25 +265,36 @@ Describe 'Module' {
                 $script:NerdFonts = $fonts
             }
 
+            $fileLock = $null
             try {
-                # Place a regular placeholder file so Test-Path returns true for cache-hit detection
+                # Lock the cached file with an exclusive share so Copy-Item fails, forcing the
+                # function to fall back to a real download using live test data.
                 if (-not (Test-Path -LiteralPath $cacheTagDir)) {
                     $null = New-Item -ItemType Directory -Path $cacheTagDir -Force
                 }
-                Set-Content -LiteralPath $cachedFile -Value 'placeholder'
+                if (Test-Path -LiteralPath $cachedFile) {
+                    Remove-Item -LiteralPath $cachedFile -Recurse -Force -ErrorAction SilentlyContinue
+                }
+                Set-Content -LiteralPath $cachedFile -Value 'locked-cache-entry' -Force
+                $fileLock = [System.IO.File]::Open(
+                    $cachedFile,
+                    [System.IO.FileMode]::Open,
+                    [System.IO.FileAccess]::Read,
+                    [System.IO.FileShare]::None
+                )
 
                 Mock -ModuleName NerdFonts Get-Font { @() }
                 Mock -ModuleName NerdFonts Install-Font {}
-                # Mock Copy-Item to throw only for the cache-read path, simulating
-                # a locked/unreadable cached file cross-platform.
-                Mock -ModuleName NerdFonts Copy-Item {
-                    throw 'Simulated cache read failure'
-                } -ParameterFilter { $LiteralPath -and $LiteralPath -eq $cachedFile }
 
                 # Should not throw — falls back to download
                 { Install-NerdFont -Name $fontName -Force:$false -ErrorAction Stop } | Should -Not -Throw
                 Should -Invoke -ModuleName NerdFonts Install-Font -Times 1 -Exactly
             } finally {
+                # Release the lock before restoring cache state.
+                if ($fileLock) {
+                    $fileLock.Dispose()
+                    $fileLock = $null
+                }
                 # Restore original cache state so no user/CI state is mutated
                 if ($hadExistingCache) {
                     Move-Item -LiteralPath $backupPath -Destination $cachedFile -Force -ErrorAction SilentlyContinue
