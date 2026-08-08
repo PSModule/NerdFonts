@@ -14,7 +14,11 @@ function Invoke-NerdFontDownload {
         [uri] $Uri,
 
         [Parameter(Mandatory)]
-        [string] $DestinationPath
+        [string] $DestinationPath,
+
+        [Parameter()]
+        [ValidateRange(1, 3600)]
+        [int] $AttemptTimeoutSeconds = 900
     )
 
     $maximumRetryCount = 5
@@ -28,9 +32,17 @@ function Invoke-NerdFontDownload {
             $response = $null
             $source = $null
             $destination = $null
+            $cancellationTokenSource = [System.Threading.CancellationTokenSource]::new()
             try {
+                $attemptTimeout = [TimeSpan]::FromSeconds($AttemptTimeoutSeconds)
+                $cancellationTokenSource.CancelAfter($attemptTimeout)
+                $cancellationToken = $cancellationTokenSource.Token
                 $responseHeadersOnly = [System.Net.Http.HttpCompletionOption]::ResponseHeadersRead
-                $response = $httpClient.GetAsync($Uri, $responseHeadersOnly).GetAwaiter().GetResult()
+                $response = $httpClient.GetAsync(
+                    $Uri,
+                    $responseHeadersOnly,
+                    $cancellationToken
+                ).GetAwaiter().GetResult()
 
                 if (-not $response.IsSuccessStatusCode) {
                     $statusCode = [int] $response.StatusCode
@@ -44,7 +56,7 @@ function Invoke-NerdFontDownload {
                     throw [InvalidOperationException]::new($errorMessage)
                 }
 
-                $source = $response.Content.ReadAsStreamAsync().GetAwaiter().GetResult()
+                $source = $response.Content.ReadAsStreamAsync($cancellationToken).GetAwaiter().GetResult()
                 $destination = [System.IO.FileStream]::new(
                     $temporaryPath,
                     [System.IO.FileMode]::Create,
@@ -53,8 +65,8 @@ function Invoke-NerdFontDownload {
                     81920,
                     [System.IO.FileOptions]::Asynchronous
                 )
-                $null = $source.CopyToAsync($destination).GetAwaiter().GetResult()
-                $null = $destination.FlushAsync().GetAwaiter().GetResult()
+                $null = $source.CopyToAsync($destination, 81920, $cancellationToken).GetAwaiter().GetResult()
+                $null = $destination.FlushAsync($cancellationToken).GetAwaiter().GetResult()
                 $destination.Dispose()
                 $destination = $null
                 $source.Dispose()
@@ -65,7 +77,7 @@ function Invoke-NerdFontDownload {
                 $isTransientException = @(
                     $_.Exception -is [System.Net.Http.HttpRequestException]
                     $_.Exception -is [System.IO.IOException]
-                    $_.Exception -is [System.Threading.Tasks.TaskCanceledException]
+                    $_.Exception -is [System.OperationCanceledException]
                 ) -contains $true
                 if ($isTransientException -and $attempt -lt $maximumRetryCount) {
                     Start-Sleep -Seconds $retryIntervalSeconds
@@ -83,6 +95,7 @@ function Invoke-NerdFontDownload {
                 if ($response) {
                     $response.Dispose()
                 }
+                $cancellationTokenSource.Dispose()
             }
         }
     } finally {
