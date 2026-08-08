@@ -159,8 +159,9 @@ Describe 'Module' {
                     } else {
                         Copy-Item -LiteralPath $validArchivePath -Destination $DestinationPath -Force
                     }
-                    Start-ThreadJob -ScriptBlock {}
+                    [pscustomobject]@{}
                 }
+                Mock -ModuleName NerdFonts Receive-NerdFontDownload {}
                 Mock -ModuleName NerdFonts Install-Font {}
 
                 { Install-NerdFont -Name @('BrokenArchiveTest', 'ValidArchiveTest') -Force -ErrorAction SilentlyContinue } |
@@ -171,6 +172,19 @@ Describe 'Module' {
                 InModuleScope NerdFonts -Parameters @{ fonts = $originalFonts } {
                     param($fonts)
                     $script:NerdFonts = $fonts
+                }
+            }
+        }
+
+        It 'New-NerdFontDownloadRunspacePool - Limits runspaces to the processor count' {
+            InModuleScope NerdFonts {
+                $processorCount = [System.Environment]::ProcessorCount
+                $runspacePool = New-NerdFontDownloadRunspacePool -MaximumRunspaces $processorCount
+                try {
+                    $runspacePool.GetMaxRunspaces() | Should -Be $processorCount
+                } finally {
+                    $runspacePool.Close()
+                    $runspacePool.Dispose()
                 }
             }
         }
