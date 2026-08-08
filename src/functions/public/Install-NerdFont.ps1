@@ -1,5 +1,5 @@
-﻿#Requires -Modules @{ ModuleName = 'Fonts'; RequiredVersion = '1.1.21' }
-#Requires -Modules @{ ModuleName = 'Admin'; RequiredVersion = '1.1.6' }
+﻿#Requires -Modules @{ ModuleName = 'Fonts'; ModuleVersion = '1.1.0'; MaximumVersion = '1.*' }
+#Requires -Modules @{ ModuleName = 'Admin'; ModuleVersion = '1.1.0'; MaximumVersion = '1.*' }
 
 function Install-NerdFont {
     <#
@@ -40,7 +40,7 @@ function Install-NerdFont {
         Installs only the monospace variant of all Nerd Fonts to the current user.
 
         .LINK
-        https://psmodule.io/NerdFonts/Functions/Install-NerdFont
+        https://psmodule.io/NerdFonts/Functions/Install-NerdFont/
 
         .NOTES
         More information about the NerdFonts can be found at:
@@ -95,7 +95,7 @@ Please run the command again with elevated rights (Run as Administrator) or prov
         $seenNames = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
 
         $guid = (New-Guid).Guid
-        $tempPath = Join-Path -Path $HOME -ChildPath "NerdFonts-$guid"
+        $tempPath = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath "NerdFonts-$guid"
         if (-not (Test-Path -Path $tempPath -PathType Container)) {
             Write-Verbose "Create folder [$tempPath]"
             $null = New-Item -Path $tempPath -ItemType Directory
