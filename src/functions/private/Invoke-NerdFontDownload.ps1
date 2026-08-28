@@ -21,11 +21,17 @@ function Invoke-NerdFontDownload {
 
         [Parameter()]
         [ValidateRange(1, 3600)]
-        [int] $AttemptTimeoutSeconds = 900
+        [int] $AttemptTimeoutSeconds = 900,
+
+        [Parameter()]
+        [ValidateRange(0, [int]::MaxValue)]
+        [int] $MaximumRetryCount = 5,
+
+        [Parameter()]
+        [ValidateRange(0, 3600)]
+        [int] $RetryIntervalSeconds = 5
     )
 
-    $maximumRetryCount = 5
-    $retryIntervalSeconds = 5
     $temporaryPath = "$DestinationPath.$PID.tmp"
     $ownsHttpClient = $null -eq $HttpClient
     if ($ownsHttpClient) {
@@ -79,11 +85,16 @@ function Invoke-NerdFontDownload {
                 [System.IO.File]::Move($temporaryPath, $DestinationPath, $true)
                 return
             } catch {
-                $isTransientException = @(
-                    $_.Exception -is [System.Net.Http.HttpRequestException]
-                    $_.Exception -is [System.IO.IOException]
-                    $_.Exception -is [System.OperationCanceledException]
-                ) -contains $true
+                $exception = $_.Exception
+                $isTransientException = $false
+                while ($null -ne $exception -and -not $isTransientException) {
+                    $isTransientException = @(
+                        $exception -is [System.Net.Http.HttpRequestException]
+                        $exception -is [System.IO.IOException]
+                        $exception -is [System.OperationCanceledException]
+                    ) -contains $true
+                    $exception = $exception.InnerException
+                }
                 if ($isTransientException -and $attempt -lt $maximumRetryCount) {
                     Start-Sleep -Seconds $retryIntervalSeconds
                     continue

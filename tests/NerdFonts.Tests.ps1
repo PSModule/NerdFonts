@@ -27,6 +27,20 @@
 [CmdletBinding()]
 param()
 
+class TestNerdFontTransientHttpMessageHandler : System.Net.Http.HttpMessageHandler {
+    [int] $AttemptCount = 0
+
+    [System.Threading.Tasks.Task[System.Net.Http.HttpResponseMessage]] SendAsync(
+        [System.Net.Http.HttpRequestMessage] $Request,
+        [System.Threading.CancellationToken] $CancellationToken
+    ) {
+        $this.AttemptCount++
+        $completionSource = [System.Threading.Tasks.TaskCompletionSource[System.Net.Http.HttpResponseMessage]]::new()
+        $completionSource.SetException([System.Net.Http.HttpRequestException]::new('Transient test failure.'))
+        return $completionSource.Task
+    }
+}
+
 Describe 'Module' {
     BeforeAll {
         function script:New-TestFontArchive {
@@ -124,6 +138,34 @@ Describe 'Module' {
                     Start-NerdFontDownload -Uri $url -DestinationPath $path -Wait
                 }
             } | Should -Throw '*HTTP status code [[]404[]]*'
+            Test-Path -LiteralPath $downloadPath | Should -BeFalse
+        }
+
+        It 'Invoke-NerdFontDownload - Retries wrapped transient exceptions' {
+            $downloadPath = Join-Path -Path $TestDrive -ChildPath 'transient.zip'
+            $handler = [TestNerdFontTransientHttpMessageHandler]::new()
+            $httpClient = [System.Net.Http.HttpClient]::new($handler, $false)
+
+            try {
+                {
+                    InModuleScope NerdFonts -Parameters @{ client = $httpClient; path = $downloadPath } {
+                        param($client, $path)
+                        $params = @{
+                            Uri                  = 'https://example.invalid/archive.zip'
+                            DestinationPath      = $path
+                            HttpClient           = $client
+                            MaximumRetryCount    = 1
+                            RetryIntervalSeconds = 0
+                        }
+                        Invoke-NerdFontDownload @params
+                    }
+                } | Should -Throw '*Transient test failure*'
+                $handler.AttemptCount | Should -Be 2
+            } finally {
+                $httpClient.Dispose()
+                $handler.Dispose()
+            }
+
             Test-Path -LiteralPath $downloadPath | Should -BeFalse
         }
 
