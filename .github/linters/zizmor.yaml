@@ -1,0 +1,15 @@
+# Configuration for zizmor, the GitHub Actions static analysis tool.
+# Reference: https://docs.zizmor.sh/configuration/
+#
+# Super-linter passes this file with '--config', resolved from LINTER_RULES_PATH
+# (default '.github/linters'), so the filename must stay 'zizmor.yaml'.
+
+rules:
+  unpinned-uses:
+    config:
+      # Process-PSModule is a first-party PSModule workflow that this repository
+      # tracks by major tag on purpose, so the framework can ship fixes without a
+      # Dependabot bump per consumer. Allow a symbolic ref for the PSModule org
+      # only; everything else falls through to the implicit '*': hash-pin rule.
+      policies:
+        PSModule/*: ref-pin
