@@ -116,6 +116,7 @@ Describe 'Module' {
             $loadedFonts = Get-Content -Path (Join-Path -Path $PSScriptRoot -ChildPath '../src/FontsData.json') | ConvertFrom-Json
             $goodFont = $loadedFonts | Where-Object Name -EQ 'Tinos' | Select-Object -First 1
             $downloadPath = Join-Path -Path $TestDrive -ChildPath 'Tinos.zip'
+            [System.IO.File]::WriteAllText($downloadPath, 'stale archive')
 
             InModuleScope NerdFonts -Parameters @{ url = $goodFont.URL; path = $downloadPath } {
                 param($url, $path)
@@ -273,6 +274,11 @@ Describe 'Module' {
             )
             $script:TestArchivePath = Join-Path -Path $TestDrive -ChildPath 'force-download.zip'
             New-TestFontArchive -ArchivePath $script:TestArchivePath -FileNames 'ForceDownloadTestNerdFont-Regular.ttf'
+            $cacheRoot = Join-Path -Path $TestDrive -ChildPath 'cache'
+            $cacheTagDir = Join-Path -Path $cacheRoot -ChildPath 'unknown'
+            $cachedFile = Join-Path -Path $cacheTagDir -ChildPath 'force-download.zip'
+            $null = New-Item -ItemType Directory -Path $cacheTagDir -Force
+            [System.IO.File]::WriteAllText($cachedFile, 'stale cache')
 
             InModuleScope NerdFonts -Parameters @{ fonts = $testFonts } {
                 param($fonts)
@@ -284,7 +290,7 @@ Describe 'Module' {
                     [pscustomobject]@{ Name = 'ForceDownloadTestNerdFont-Regular' }
                 }
                 Mock -ModuleName NerdFonts Get-NerdFontCacheRoot {
-                    Join-Path -Path $TestDrive -ChildPath 'cache'
+                    $cacheRoot
                 }
                 Mock -ModuleName NerdFonts Start-NerdFontDownload {
                     param($Uri, $DestinationPath)
@@ -296,6 +302,12 @@ Describe 'Module' {
                 { Install-NerdFont -Name $fontName -Force -ErrorAction Stop } | Should -Not -Throw
                 Should -Invoke -ModuleName NerdFonts Start-NerdFontDownload -Times 1 -Exactly
                 Should -Invoke -ModuleName NerdFonts Install-Font -Times 1 -Exactly
+                $cachedArchive = [System.IO.Compression.ZipFile]::OpenRead($cachedFile)
+                try {
+                    $cachedArchive.Entries.Name | Should -Contain 'ForceDownloadTestNerdFont-Regular.ttf'
+                } finally {
+                    $cachedArchive.Dispose()
+                }
             } finally {
                 InModuleScope NerdFonts -Parameters @{ fonts = $originalFonts } {
                     param($fonts)

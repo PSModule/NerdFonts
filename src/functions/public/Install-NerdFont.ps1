@@ -325,9 +325,14 @@ Please run the command again with elevated rights (Run as Administrator) or prov
                         if (-not (Test-Path -LiteralPath $p.CacheTagDir)) {
                             $null = New-Item -ItemType Directory -Path $p.CacheTagDir -Force -ErrorAction Stop
                         }
-                        $tempCachePath = "$($p.CachedFile).$PID.tmp"
-                        Copy-Item -LiteralPath $downloadPath -Destination $tempCachePath -Force -ErrorAction Stop
-                        Move-Item -LiteralPath $tempCachePath -Destination $p.CachedFile -Force -ErrorAction Stop
+                        # Rename in place when possible; copy-and-promote only when the cache is on another volume.
+                        try {
+                            [System.IO.File]::Move($downloadPath, $p.CachedFile, $true)
+                        } catch [System.IO.IOException] {
+                            $tempCachePath = "$($p.CachedFile).$PID.tmp"
+                            [System.IO.File]::Copy($downloadPath, $tempCachePath, $true)
+                            [System.IO.File]::Move($tempCachePath, $p.CachedFile, $true)
+                        }
                     } catch {
                         Write-Warning "[$fontName] - Download succeeded but cache write failed: $($_.Exception.Message)"
                         if ($tempCachePath -and (Test-Path -LiteralPath $tempCachePath)) {

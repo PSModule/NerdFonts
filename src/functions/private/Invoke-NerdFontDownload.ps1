@@ -33,6 +33,9 @@ function Invoke-NerdFontDownload {
     )
 
     $temporaryPath = "$DestinationPath.$PID.tmp"
+    $copyBufferSize = 1MB
+    $fileBufferSize = 4096
+    $fileOptions = [System.IO.FileOptions]::Asynchronous -bor [System.IO.FileOptions]::SequentialScan
     $ownsHttpClient = $null -eq $HttpClient
     if ($ownsHttpClient) {
         $HttpClient = New-NerdFontHttpClient -MaximumConnections 1
@@ -73,10 +76,14 @@ function Invoke-NerdFontDownload {
                     [System.IO.FileMode]::Create,
                     [System.IO.FileAccess]::Write,
                     [System.IO.FileShare]::None,
-                    81920,
-                    [System.IO.FileOptions]::Asynchronous
+                    $fileBufferSize,
+                    $fileOptions
                 )
-                $null = $source.CopyToAsync($destination, 81920, $cancellationToken).GetAwaiter().GetResult()
+                $null = $source.CopyToAsync(
+                    $destination,
+                    $copyBufferSize,
+                    $cancellationToken
+                ).GetAwaiter().GetResult()
                 $null = $destination.FlushAsync($cancellationToken).GetAwaiter().GetResult()
                 $destination.Dispose()
                 $destination = $null
