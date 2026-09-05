@@ -1,0 +1,132 @@
+function Invoke-NerdFontDownload {
+    <#
+        .SYNOPSIS
+        Streams a font archive to disk with retries.
+    #>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute(
+        'PSUseShouldProcessForStateChangingFunctions', '',
+        Justification = 'Install-NerdFont confirms the download operation before invoking this helper.'
+    )]
+    [OutputType([void])]
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [uri] $Uri,
+
+        [Parameter(Mandatory)]
+        [string] $DestinationPath,
+
+        [Parameter()]
+        [System.Net.Http.HttpClient] $HttpClient,
+
+        [Parameter()]
+        [ValidateRange(1, 3600)]
+        [int] $AttemptTimeoutSeconds = 900,
+
+        [Parameter()]
+        [ValidateRange(0, [int]::MaxValue)]
+        [int] $MaximumRetryCount = 5,
+
+        [Parameter()]
+        [ValidateRange(0, 3600)]
+        [int] $RetryIntervalSeconds = 5
+    )
+
+    $temporaryPath = "$DestinationPath.$PID.tmp"
+    $copyBufferSize = 1MB
+    $fileBufferSize = 4096
+    $fileOptions = [System.IO.FileOptions]::Asynchronous -bor [System.IO.FileOptions]::SequentialScan
+    $ownsHttpClient = $null -eq $HttpClient
+    if ($ownsHttpClient) {
+        $HttpClient = New-NerdFontHttpClient -MaximumConnections 1
+    }
+
+    try {
+        for ($attempt = 0; $attempt -le $maximumRetryCount; $attempt++) {
+            $response = $null
+            $source = $null
+            $destination = $null
+            $cancellationTokenSource = [System.Threading.CancellationTokenSource]::new()
+            try {
+                $attemptTimeout = [TimeSpan]::FromSeconds($AttemptTimeoutSeconds)
+                $cancellationTokenSource.CancelAfter($attemptTimeout)
+                $cancellationToken = $cancellationTokenSource.Token
+                $responseHeadersOnly = [System.Net.Http.HttpCompletionOption]::ResponseHeadersRead
+                $response = $httpClient.GetAsync(
+                    $Uri,
+                    $responseHeadersOnly,
+                    $cancellationToken
+                ).GetAwaiter().GetResult()
+
+                if (-not $response.IsSuccessStatusCode) {
+                    $statusCode = [int] $response.StatusCode
+                    $isTransientStatus = $statusCode -eq 408 -or $statusCode -eq 429 -or $statusCode -ge 500
+                    if ($isTransientStatus -and $attempt -lt $maximumRetryCount) {
+                        Start-Sleep -Seconds $retryIntervalSeconds
+                        continue
+                    }
+
+                    $errorMessage = "Download failed with HTTP status code [$statusCode]."
+                    throw [InvalidOperationException]::new($errorMessage)
+                }
+
+                $source = $response.Content.ReadAsStreamAsync($cancellationToken).GetAwaiter().GetResult()
+                $destination = [System.IO.FileStream]::new(
+                    $temporaryPath,
+                    [System.IO.FileMode]::Create,
+                    [System.IO.FileAccess]::Write,
+                    [System.IO.FileShare]::None,
+                    $fileBufferSize,
+                    $fileOptions
+                )
+                $null = $source.CopyToAsync(
+                    $destination,
+                    $copyBufferSize,
+                    $cancellationToken
+                ).GetAwaiter().GetResult()
+                $null = $destination.FlushAsync($cancellationToken).GetAwaiter().GetResult()
+                $destination.Dispose()
+                $destination = $null
+                $source.Dispose()
+                $source = $null
+                [System.IO.File]::Move($temporaryPath, $DestinationPath, $true)
+                return
+            } catch {
+                $exception = $_.Exception
+                $isTransientException = $false
+                while ($null -ne $exception -and -not $isTransientException) {
+                    $isTransientException = @(
+                        $exception -is [System.Net.Http.HttpRequestException]
+                        $exception -is [System.IO.IOException]
+                        $exception -is [System.OperationCanceledException]
+                    ) -contains $true
+                    $exception = $exception.InnerException
+                }
+                if ($isTransientException -and $attempt -lt $maximumRetryCount) {
+                    Start-Sleep -Seconds $retryIntervalSeconds
+                    continue
+                }
+
+                throw
+            } finally {
+                if ($destination) {
+                    $destination.Dispose()
+                }
+                if ($source) {
+                    $source.Dispose()
+                }
+                if ($response) {
+                    $response.Dispose()
+                }
+                $cancellationTokenSource.Dispose()
+            }
+        }
+    } finally {
+        if ($ownsHttpClient) {
+            $HttpClient.Dispose()
+        }
+        if (Test-Path -LiteralPath $temporaryPath) {
+            Remove-Item -LiteralPath $temporaryPath -Force -ErrorAction SilentlyContinue
+        }
+    }
+}

@@ -90,13 +90,18 @@ When you run `Install-NerdFont` again without `-Force`, fonts that are already i
 Cache locations:
 
 - Windows: `%LOCALAPPDATA%/PSModule/NerdFonts/cache`
-- macOS and Linux: `$HOME/.cache/PSModule/NerdFonts`
+- macOS: `$HOME/Library/Caches/PSModule/NerdFonts`
+- Linux: `$XDG_CACHE_HOME/PSModule/NerdFonts` when `XDG_CACHE_HOME` is set, otherwise `$HOME/.cache/PSModule/NerdFonts`
 
 You can inspect the active cache path in PowerShell with:
 
 ```powershell
 if ($IsWindows) {
     Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'PSModule/NerdFonts/cache'
+} elseif ($IsMacOS) {
+    Join-Path $HOME 'Library/Caches/PSModule/NerdFonts'
+} elseif (-not [string]::IsNullOrWhiteSpace($env:XDG_CACHE_HOME)) {
+    Join-Path $env:XDG_CACHE_HOME 'PSModule/NerdFonts'
 } else {
     Join-Path $HOME '.cache/PSModule/NerdFonts'
 }
